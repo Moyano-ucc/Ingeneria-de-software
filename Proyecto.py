@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI
 # 1. Crear la instancia de FastAPI (ESTO ES OBLIGATORIO)
 app = FastAPI()
@@ -9,4 +10,12 @@ def home():
 @app.get("/eventos")
 def listar_eventos():
  return {"eventos": ["CONIITI 2024", "Taller React", "Charla IA"]} 
- 
+@app.get("/juegos")
+def listar_juegos():
+    return {
+        "juegos": [
+            "Minecraft",
+            "EA FC 26",
+            "GTA V"
+        ]
+    } 
