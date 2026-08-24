@@ -4,7 +4,7 @@ app = FastAPI()
 # 2. Definir al menos un endpoint (ruta) (ESTO ES OBLIGATORIO)
 @app.get("/")
 def home():
- return {"mensaje": "Mi API esta funcionando"}
+ return {"mensaje": "MI api esta en azure"}
 # 3. Si quieren ma s endpoints, los agregan así :
 @app.get("/eventos")
 def listar_eventos():
