@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 2rem auto; background-color: #122459; padding: 2rem; border-radius: 8px;">
+    <h2>Iniciar Sesión en NIVORA</h2>
+    {% if error %}
+        <p style="color: #F2A30F;">{{ error }}</p>
+    {% endif %}
+    <form action="/login" method="POST">
+        <div style="margin-bottom: 1rem;">
+            <label>Correo electrónico</label><br>
+            <input type="email" name="email" required style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label>Contraseña</label><br>
+            <input type="password" name="password" required style="width: 100%; padding: 0.5rem; margin-top: 0.5rem;">
+        </div>
+        <button type="submit" class="btn" style="width: 100%;">Iniciar sesión</button>
+    </form>
+    <p class="subtext" style="margin-top: 1rem;">
+        <a href="/registro" style="color: #F2CA0F;">¿No tienes cuenta? Regístrate</a>
+    </p>
+</div>
+{% endblock %}
