@@ -1,16 +1,20 @@
-from flask import Flask
+from flask import Flask, render_template
 from controllers.aprender_controller import aprender_bp
 from controllers.auth_controller import auth_bp
+from controllers.practica_controller import practica_bp
 
 app = Flask(__name__)
 app.secret_key = 'nivora_secret_key'
 
+# Registro de controladores (Blueprints)
 app.register_blueprint(aprender_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(practica_bp)
 
+# Ruta de Inicio (Landing Page)
 @app.route('/')
 def home():
-    return "Servidor NIVORA activo. Ve a /login o /aprender"
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -20,6 +20,7 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         if UsuarioModel.autenticar(email, password):
+            # Redirección a la sección Aprender
             return redirect(url_for('aprender.mostrar_aprender'))
         return render_template('login.html', error="Credenciales inválidas")
     return render_template('login.html')
