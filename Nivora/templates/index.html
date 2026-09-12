@@ -1,30 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div style="text-align: center; padding: 3rem 1rem;">
-    <h1 style="font-size: 2.8rem; color: #F2A30F; margin-bottom: 1rem;">Bienvenido a NIVORA</h1>
-    <p style="font-size: 1.2rem; max-width: 650px; margin: 0 auto 2rem auto;" class="subtext">
-        Plataforma web educativa e interactiva para el aprendizaje progresivo de programación en Python.
+<div class="container" style="text-align: center; padding: 4rem 1rem;">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">APRENDE PYTHON</h1>
+    <p style="font-size: 1.2rem; color: var(--text-sub); margin-bottom: 2rem;">
+        Completa desafíos, gana experiencia y construye tus habilidades paso a paso
     </p>
-    
-    <div style="display: flex; justify-content: center; gap: 1rem;">
-        <a href="/login" class="btn-continuar" style="padding: 0.8rem 1.8rem; font-size: 1rem;">Iniciar Sesión</a>
-        <a href="/registro" class="btn-continuar" style="background-color: transparent; border: 2px solid #F2A30F; color: #FFFFFF; padding: 0.8rem 1.8rem; font-size: 1rem;">Registrarse</a>
-    </div>
-</div>
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 3rem;">
-    <div class="card" style="flex-direction: column; align-items: flex-start;">
-        <h3 style="color: #F2CA0F;">1. Aprender</h3>
-        <p class="subtext">Consulta conceptos clave y sigue rutas de aprendizaje estructuradas.</p>
-    </div>
-    <div class="card" style="flex-direction: column; align-items: flex-start;">
-        <h3 style="color: #F2CA0F;">2. Practicar</h3>
-        <p class="subtext">Resuelve ejercicios y problemas algorítmicos contextualizados.</p>
-    </div>
-    <div class="card" style="flex-direction: column; align-items: flex-start;">
-        <h3 style="color: #F2CA0F;">3. Aplicar</h3>
-        <p class="subtext">Implementa tus soluciones directamente en Python y evalúa tu progreso.</p>
-    </div>
+    <a href="/registro" class="btn-yellow" style="width: auto; padding: 0.8rem 2.5rem;">Empieza ahora</a>
 </div>
 {% endblock %}

@@ -1,18 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 style="margin-bottom: 0.2rem;">Rutas de Aprendizaje</h1>
-<p class="subtext" style="margin-bottom: 2rem;">Aprende Python mediante conceptos, ejemplos y ejercicios prácticos.</p>
+<div class="container">
+    <h2 style="font-weight: normal; margin-bottom: 2rem;">Hola, {{ usuario }}, continua donde lo dejaste:</h2>
 
-{% for ruta in rutas %}
-<div class="card">
-    <div>
-        <h2 style="margin: 0 0 0.5rem 0;">{{ ruta.nombre }}</h2>
-        <span class="badge-progreso">Progreso: {{ ruta.progreso_texto }}</span>
+    {% for ruta in rutas %}
+    <div class="module-card">
+        <div style="display: flex; align-items: center;">
+            <span class="module-num">{{ ruta.id }}</span>
+            <div class="module-info">
+                <h4>{{ ruta.nombre }}</h4>
+                <p>{{ ruta.descripcion }}</p>
+            </div>
+        </div>
+        <div class="module-status">
+            <span style="color: var(--text-sub);">{{ ruta.progreso }}</span>
+            {% if ruta.estado == 'Continuar' %}
+                <a href="#" class="btn-continuar-sm">✓ Continuar</a>
+            {% else %}
+                <span style="color: #48bb78;">☑ {{ ruta.estado }}</span>
+            {% endif %}
+        </div>
     </div>
-    <div>
-        <a href="#" class="btn-continuar">Continuar</a>
-    </div>
+    {% endfor %}
 </div>
-{% endfor %}
 {% endblock %}

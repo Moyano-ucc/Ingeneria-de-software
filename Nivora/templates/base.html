@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NIVORA - Aprendizaje de Programación</title>
+    <title>Nivora - Aprende Python</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <header>
-    <a href="/" class="logo" style="text-decoration: none;">NIVORA</a>
-    <nav>
-        <a href="/">Inicio</a>
-        <a href="/aprender">Aprender</a>
-        <a href="/practica">Práctica</a>
-        <a href="/login" class="btn-continuar" style="padding: 0.4rem 1rem; margin-left: 1rem;">Iniciar Sesión</a>
-    </nav>
-</header>
+        <a href="/" class="logo">Nivora</a>
+        <nav>
+            <a href="/aprender">Aprender</a>
+            <a href="/practica">Practica</a>
+            <a href="#">Tu progreso</a>
+            <a href="/login">iniciar sesión</a>
+            <span class="badge-premium">Premium</span>
+        </nav>
+    </header>
 
-    <main class="container">
+    <main>
         {% block content %}{% endblock %}
     </main>
 </body>

@@ -1,95 +1,165 @@
-/* Paleta de colores NIVORA */
 :root {
-    --azul-principal: #153866;   /* Fondo principal de las páginas */
-    --azul-oscuro: #122459;      /* Header, navbar y tarjetas */
-    --amarillo-principal: #F2A30F;/* Botones y llamados a la acción */
-    --amarillo-adicional: #F2CA0F;/* Detalles, bordes e indicadores */
-    --gris-texto: #8C8C8C;         /* Textos secundarios */
-    --blanco: #FFFFFF;             /* Textos principales */
+    --bg-dark: #0f1b2d;
+    --card-dark: #15253d;
+    --yellow-primary: #f39c12;
+    --yellow-hover: #d3830e;
+    --text-light: #ffffff;
+    --text-sub: #a0aec0;
+    --blue-accent: #2b6cb0;
 }
 
 body {
-    background-color: var(--azul-principal);
-    color: var(--blanco);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Segoe UI', Arial, sans-serif;
     margin: 0;
     padding: 0;
 }
 
-/* Barra de navegación */
 header {
-    background-color: var(--azul-oscuro);
+    background-color: #0b1424;
     padding: 1rem 3rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    border-bottom: 1px solid #1a2942;
 }
 
 .logo {
-    color: var(--amarillo-principal);
     font-size: 1.8rem;
     font-weight: bold;
-    letter-spacing: 1px;
+    color: var(--text-light);
+    text-decoration: none;
 }
 
 nav a {
-    color: var(--blanco);
+    color: var(--text-light);
     text-decoration: none;
     margin-left: 1.5rem;
-    font-weight: 500;
-    transition: color 0.2s;
+    font-size: 1rem;
 }
 
-nav a:hover {
-    color: var(--amarillo-adicional);
+.badge-premium {
+    background-color: var(--yellow-primary);
+    color: #000;
+    font-weight: bold;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
 }
 
-/* Estructura general */
 .container {
-    max-width: 1000px;
+    max-width: 900px;
     margin: 2rem auto;
     padding: 0 1rem;
 }
 
-.subtext {
-    color: var(--gris-texto);
+/* Tarjeta de Formulario estilo PDF */
+.auth-card {
+    background-color: #ffffff;
+    color: #333333;
+    max-width: 400px;
+    margin: 3rem auto;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* Tarjetas de rutas y ejercicios */
-.card {
-    background-color: var(--azul-oscuro);
-    border-left: 5px solid var(--amarillo-adicional);
+.auth-card h2 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    color: #1a202c;
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.btn-yellow {
+    width: 100%;
+    background-color: var(--yellow-primary);
+    color: #ffffff;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-yellow:hover {
+    background-color: var(--yellow-hover);
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.auth-links a {
+    color: #3182ce;
+    text-decoration: none;
+}
+
+/* Módulos de Aprendizaje */
+.module-card {
+    background-color: var(--card-dark);
     border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.badge-progreso {
-    background-color: rgba(242, 202, 15, 0.15);
-    color: var(--amarillo-adicional);
-    padding: 4px 12px;
-    border-radius: 12px;
+.module-num {
+    font-size: 1.2rem;
     font-weight: bold;
+    color: var(--yellow-primary);
+    margin-right: 1rem;
+}
+
+.module-info h4 {
+    margin: 0 0 0.3rem 0;
+    font-size: 1.1rem;
+}
+
+.module-info p {
+    margin: 0;
+    color: var(--text-sub);
     font-size: 0.9rem;
 }
 
-/* Botón principal */
-.btn-continuar {
-    background-color: var(--amarillo-principal);
-    color: var(--azul-oscuro);
-    padding: 0.6rem 1.4rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    text-decoration: none;
-    cursor: pointer;
-    transition: opacity 0.2s;
+.module-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-.btn-continuar:hover {
-    opacity: 0.9;
+.btn-continuar-sm {
+    background-color: var(--yellow-primary);
+    color: #000;
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
 }

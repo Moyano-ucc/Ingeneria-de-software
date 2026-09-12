@@ -1,27 +1,54 @@
 class RutaModel:
     @staticmethod
     def obtener_rutas():
-        # Módulos y formato de progreso estipulados en RF-03 de Nivora
         return [
             {
-                "id": 1,
+                "id": "01",
+                "nombre": "Introducción al desarrollo web",
+                "descripcion": "Crea páginas web usando Python.",
+                "progreso": "0/2",
+                "estado": "Completado"
+            },
+            {
+                "id": "02",
                 "nombre": "Control de flujo",
-                "completado": 1,
-                "total": 6,
-                "progreso_texto": "1/6"
+                "descripcion": "Codifica condicionales y bucles para construir programas inteligentes.",
+                "progreso": "0/2",
+                "estado": "Completado"
             },
             {
-                "id": 2,
+                "id": "03",
                 "nombre": "Listas",
-                "completado": 0,
-                "total": 2,
-                "progreso_texto": "0/2"
+                "descripcion": "Crear listas para organizar grupos de valores.",
+                "progreso": "0/2",
+                "estado": "Completado"
             },
             {
-                "id": 3,
+                "id": "04",
                 "nombre": "Funciones",
-                "completado": 0,
-                "total": 5,
-                "progreso_texto": "0/5"
+                "descripcion": "Funciones de código para que el código sea reutilizable y más fácil de leer.",
+                "progreso": "0/3",
+                "estado": "Completado"
+            },
+            {
+                "id": "05",
+                "nombre": "Conceptos avanzados de Python",
+                "descripcion": "Domina clases y objetos.",
+                "progreso": "0/4",
+                "estado": "Completado"
+            },
+            {
+                "id": "06",
+                "nombre": "Persistencia de Datos",
+                "descripcion": "Almacena y recupera datos de forma eficiente.",
+                "progreso": "0/5",
+                "estado": "Completado"
+            },
+            {
+                "id": "07",
+                "nombre": "Proyecto Final: Web App",
+                "descripcion": "Construye tu aplicación web completa.",
+                "progreso": "1/6",
+                "estado": "Continuar"
             }
         ]
