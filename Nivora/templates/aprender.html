@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Rutas de Aprendizaje</h1>
+{% for ruta in rutas %}
+<div class="card">
+    <h2>{{ ruta.nombre }}</h2>
+    <p class="subtext">Progreso: {{ ruta.completado }}/{{ ruta.total }}</p>
+    <a href="#" class="btn">Continuar</a>
+</div>
+{% endfor %}
+{% endblock %}
