@@ -1,0 +1,95 @@
+/* Paleta de colores NIVORA */
+:root {
+    --azul-principal: #153866;   /* Fondo principal de las páginas */
+    --azul-oscuro: #122459;      /* Header, navbar y tarjetas */
+    --amarillo-principal: #F2A30F;/* Botones y llamados a la acción */
+    --amarillo-adicional: #F2CA0F;/* Detalles, bordes e indicadores */
+    --gris-texto: #8C8C8C;         /* Textos secundarios */
+    --blanco: #FFFFFF;             /* Textos principales */
+}
+
+body {
+    background-color: var(--azul-principal);
+    color: var(--blanco);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Barra de navegación */
+header {
+    background-color: var(--azul-oscuro);
+    padding: 1rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.logo {
+    color: var(--amarillo-principal);
+    font-size: 1.8rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+nav a {
+    color: var(--blanco);
+    text-decoration: none;
+    margin-left: 1.5rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+nav a:hover {
+    color: var(--amarillo-adicional);
+}
+
+/* Estructura general */
+.container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.subtext {
+    color: var(--gris-texto);
+}
+
+/* Tarjetas de rutas y ejercicios */
+.card {
+    background-color: var(--azul-oscuro);
+    border-left: 5px solid var(--amarillo-adicional);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.badge-progreso {
+    background-color: rgba(242, 202, 15, 0.15);
+    color: var(--amarillo-adicional);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Botón principal */
+.btn-continuar {
+    background-color: var(--amarillo-principal);
+    color: var(--azul-oscuro);
+    padding: 0.6rem 1.4rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-continuar:hover {
+    opacity: 0.9;
+}

@@ -2,24 +2,22 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nivora - Aprender</title>
-    <style>
-        body { background-color: #153866; color: #FFFFFF; font-family: Arial, sans-serif; margin: 0; }
-        header { background-color: #122459; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .logo { color: #F2A30F; font-size: 1.5rem; font-weight: bold; }
-        .container { padding: 2rem; }
-        .card { background-color: #122459; border-left: 4px solid #F2CA0F; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; }
-        .btn { background-color: #F2A30F; color: #122459; padding: 0.5rem 1rem; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block; }
-        .subtext { color: #8C8C8C; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIVORA - Aprendizaje de Programación</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <header>
         <div class="logo">NIVORA</div>
-        <nav><a href="/aprender" style="color: #FFFFFF; text-decoration: none;">Aprender</a></nav>
+        <nav>
+            <a href="/aprender">Aprender</a>
+            <a href="/practica">Práctica</a>
+            <a href="/login">Iniciar Sesión</a>
+        </nav>
     </header>
-    <div class="container">
+
+    <main class="container">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 </body>
 </html>
