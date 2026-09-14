@@ -1,3 +1,4 @@
+#pip install -r requirements.txt
 from flask import Flask, render_template
 from controllers.aprender_controller import aprender_bp
 from controllers.auth_controller import auth_bp
