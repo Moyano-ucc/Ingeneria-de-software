@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-card">
+    <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.2rem;">Nivora</h2>
+    <p style="color: #666; margin-bottom: 1.5rem;">Empieza a aprender python hoy</p>
+
+    <form action="/registro" method="POST">
+        <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" name="email" placeholder="nombre@correo.com" required>
+        </div>
+
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn-yellow">
+            Crear cuenta
+        </button>
+    </form>
+
+    <div class="auth-links">
+        <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+    </div>
+</div>
+{% endblock %}

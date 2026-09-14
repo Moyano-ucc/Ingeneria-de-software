@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="text-align: center; padding: 4rem 1rem;">
+
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">
+        APRENDE PYTHON
+    </h1>
+
+    <p style="font-size: 1.2rem; color: var(--text-sub); margin-bottom: 2rem;">
+        Aprende programación paso a paso mediante lecciones interactivas y actividades prácticas.
+    </p>
+
+    <img src="{{ url_for('static', filename='img/nivora_inicio.png') }}"
+         alt="Nivora"
+         style="width: 300px; max-width: 80%; margin: 1rem auto 2rem; display: block;">
+
+    <a href="/registro" class="btn-yellow" style="width: auto; padding: 0.8rem 2.5rem;">
+        Empieza ahora
+    </a>
+
+</div>
+{% endblock %}
+```
