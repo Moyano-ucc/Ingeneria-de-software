@@ -14,8 +14,16 @@
         <nav>
             <a href="/aprender">Aprender</a>
             <a href="/practica">Practicar</a>
-            <a href="/progreso">Tu progreso</a>
-            <a href="/login">Iniciar sesión</a>
+            {% if session.get('usuario') %}
+                <a href="/progreso">Tu progreso</a>
+                <a href="/ajustes" class="user-menu">
+                    <span class="user-avatar">{{ session['usuario']['nombre'][0]|upper }}</span>
+                    {{ session['usuario']['nombre'] }}
+                </a>
+                <a href="/logout" class="nav-muted">Salir</a>
+            {% else %}
+                <a href="/login" class="nav-login">Iniciar sesión</a>
+            {% endif %}
         </nav>
     </header>
 

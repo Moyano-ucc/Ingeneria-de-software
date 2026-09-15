@@ -3,13 +3,14 @@ class UsuarioModel:
     usuarios_db = []
 
     @classmethod
-    def registrar(cls, email, password):
+    def registrar(cls, nombre, email, password):
         # Verifica si el correo ya está registrado
         for usuario in cls.usuarios_db:
             if usuario['email'] == email:
                 return False, "El correo electrónico ya está registrado"
 
         cls.usuarios_db.append({
+            "nombre": nombre,
             "email": email,
             "password": password
         })
@@ -21,6 +22,6 @@ class UsuarioModel:
         # Verifica que las credenciales coincidan
         for usuario in cls.usuarios_db:
             if usuario['email'] == email and usuario['password'] == password:
-                return True
+                return usuario
 
-        return False
+        return None

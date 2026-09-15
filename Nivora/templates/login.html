@@ -21,6 +21,10 @@
         </button>
     </form>
 
+    {% if mensaje %}
+        <p class="form-message">{{ mensaje }}</p>
+    {% endif %}
+
     <div class="auth-links">
         <p><a href="#">¿Olvidaste tu contraseña?</a></p>
         <p>¿No tienes cuenta? <a href="/registro">Regístrate</a></p>

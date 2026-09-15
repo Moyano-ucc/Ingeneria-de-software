@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="settings-page container">
+    <p class="eyebrow">Tu cuenta</p>
+    <h1>Ajustes</h1>
+    <div class="settings-panel">
+        <div class="settings-avatar">{{ usuario['nombre'][0]|upper }}</div>
+        <div>
+            <p class="settings-label">Nombre de usuario</p>
+            <h2>{{ usuario['nombre'] }}</h2>
+            <p class="settings-email">{{ usuario['email'] }}</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

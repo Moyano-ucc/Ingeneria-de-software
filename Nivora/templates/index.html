@@ -1,24 +1,42 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container" style="text-align: center; padding: 4rem 1rem;">
+<section class="home-hero">
+    <div class="hero-copy">
+        <p class="eyebrow">Aprendizaje que se mueve contigo</p>
+        <h1>Piensa en código.<br><span>Construye tu próximo nivel.</span></h1>
+        <p class="hero-description">Aprende Python con rutas cortas, práctica real y una guía que convierte cada pequeño avance en confianza.</p>
+        <div class="hero-actions">
+            <a href="{{ '/aprender' if session.get('usuario') else '/registro' }}" class="btn-yellow">{{ 'Continuar aprendiendo' if session.get('usuario') else 'Crear mi cuenta' }}</a>
+            <a href="/practica" class="text-link">Explorar prácticas <span>&rarr;</span></a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="code-card">
+            <div class="code-top"><span></span><span></span><span></span><b>nivora.py</b></div>
+            <pre><code><i>def</i> <strong>crear_futuro</strong>(<em>idea</em>):
+    <i>return</i> idea + <mark>"práctica"</mark>
 
-    <h1 style="font-size: 3rem; margin-bottom: 1rem;">
-        APRENDE PYTHON
-    </h1>
+<span class="code-result">&gt;&gt;&gt; crear_futuro("tu")</span>
+<strong class="code-output">'tu práctica'</strong></code></pre>
+        </div>
+        <img src="{{ url_for('static', filename='img/nivora_inicio.png') }}" alt="Ilustración de Nivora" class="hero-character">
+        <span class="float-chip chip-one">&lt;/&gt; +1 habilidad</span>
+        <span class="float-chip chip-two">Ruta en progreso</span>
+    </div>
+</section>
 
-    <p style="font-size: 1.2rem; color: var(--text-sub); margin-bottom: 2rem;">
-        Aprende programación paso a paso mediante lecciones interactivas y actividades prácticas.
-    </p>
+<section class="home-stats container">
+    <div><strong>3</strong><span>rutas para dominar</span></div>
+    <div><strong>100%</strong><span>práctica a tu ritmo</span></div>
+    <div><strong>0</strong><span>experiencia necesaria</span></div>
+</section>
 
-    <img src="{{ url_for('static', filename='img/nivora_inicio.png') }}"
-         alt="Nivora"
-         style="width: 300px; max-width: 80%; margin: 1rem auto 2rem; display: block;">
-
-    <a href="/registro" class="btn-yellow" style="width: auto; padding: 0.8rem 2.5rem;">
-        Empieza ahora
-    </a>
-
-</div>
+<section class="home-next container">
+    <div><p class="eyebrow">Tu punto de partida</p><h2>Una forma más clara de aprender.</h2></div>
+    <p>Conceptos esenciales, ejercicios concretos y progreso visible para que siempre sepas qué sigue.</p>
+</section>
 {% endblock %}
 ```

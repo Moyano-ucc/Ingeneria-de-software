@@ -7,6 +7,10 @@
 
     <form action="/registro" method="POST">
         <div class="form-group">
+            <label>Nombre de usuario</label>
+            <input type="text" name="nombre" placeholder="Tu nombre" required maxlength="30">
+        </div>
+        <div class="form-group">
             <label>Correo electrónico</label>
             <input type="email" name="email" placeholder="nombre@correo.com" required>
         </div>
@@ -20,6 +24,10 @@
             Crear cuenta
         </button>
     </form>
+
+    {% if mensaje %}
+        <p class="form-message">{{ mensaje }}</p>
+    {% endif %}
 
     <div class="auth-links">
         <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
