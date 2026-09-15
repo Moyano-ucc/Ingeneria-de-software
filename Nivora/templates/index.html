@@ -34,9 +34,32 @@
     <div><strong>0</strong><span>experiencia necesaria</span></div>
 </section>
 
-<section class="home-next container">
-    <div><p class="eyebrow">Tu punto de partida</p><h2>Una forma más clara de aprender.</h2></div>
-    <p>Conceptos esenciales, ejercicios concretos y progreso visible para que siempre sepas qué sigue.</p>
+<section class="offer-section container">
+    <div class="offer-heading">
+        <p class="eyebrow">Todo lo que necesitas para avanzar</p>
+        <h2>Aprende haciendo,<br>paso a paso.</h2>
+        <p>Una experiencia pensada para que cada concepto termine convertido en algo que puedes construir.</p>
+    </div>
+    <div class="offer-grid">
+        <article class="offer-card offer-card-featured">
+            <span class="offer-number">01</span>
+            <h3>Rutas guiadas</h3>
+            <p>Lecciones ordenadas desde los fundamentos hasta las estructuras que usarás en proyectos reales.</p>
+            <a href="/aprender" class="offer-link">Ver rutas <span>&rarr;</span></a>
+        </article>
+        <article class="offer-card">
+            <span class="offer-number">02</span>
+            <h3>Práctica con propósito</h3>
+            <p>Ejercicios breves para convertir la teoría en código y ganar soltura resolviendo problemas.</p>
+            <a href="/practica" class="offer-link">Practicar <span>&rarr;</span></a>
+        </article>
+        <article class="offer-card">
+            <span class="offer-number">03</span>
+            <h3>Progreso visible</h3>
+            <p>Consulta tus avances y vuelve exactamente al punto donde dejaste tu aprendizaje.</p>
+            <a href="{{ '/progreso' if session.get('usuario') else '/registro' }}" class="offer-link">{{ 'Ver mi progreso' if session.get('usuario') else 'Empezar ahora' }} <span>&rarr;</span></a>
+        </article>
+    </div>
 </section>
 {% endblock %}
 ```
