@@ -8,6 +8,7 @@
     --blue-accent: #2b6cb0;
 }
 
+/* General */
 body {
     background: radial-gradient(circle at 72% 18%, rgba(43, 108, 176, 0.22), transparent 28rem), var(--bg-dark);
     color: var(--text-light);
@@ -16,6 +17,7 @@ body {
     padding: 0;
 }
 
+/* Header */
 header {
     background-color: #0b1424;
     padding: 1rem 3rem;
@@ -27,6 +29,7 @@ header {
     z-index: 5;
 }
 
+/* Logo */
 .logo {
     font-size: 1.8rem;
     font-weight: bold;
@@ -34,6 +37,7 @@ header {
     text-decoration: none;
 }
 
+/* Menú */
 nav a {
     color: var(--text-light);
     text-decoration: none;
@@ -41,22 +45,26 @@ nav a {
     font-size: 1rem;
 }
 
+/* Hover del menú */
 nav a:hover,
 .text-link:hover {
     color: var(--yellow-primary);
 }
 
+/* Botón de login */
 .nav-login {
     border: 1px solid var(--yellow-primary);
     padding: 0.55rem 1rem;
     border-radius: 5px;
 }
 
+/* Salir */
 .nav-muted {
     color: var(--text-sub);
     font-size: 0.9rem;
 }
 
+/* Menú del usuario */
 .user-menu {
     display: inline-flex;
     align-items: center;
@@ -64,6 +72,7 @@ nav a:hover,
     font-weight: bold;
 }
 
+/* Avatar */
 .user-avatar,
 .settings-avatar {
     display: inline-grid;
@@ -80,6 +89,7 @@ nav a:hover,
     font-size: 0.8rem;
 }
 
+/* Mensaje de formulario */
 .form-message {
     color: #c53030;
     text-align: center;
@@ -96,9 +106,10 @@ nav a:hover,
     grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
     align-items: center;
     gap: 2rem;
-    overflow: hidden;
+    overflow: visible;
 }
 
+/* Texto pequeño */
 .eyebrow {
     color: var(--yellow-primary);
     font-size: 0.78rem;
@@ -111,6 +122,7 @@ nav a:hover,
     animation: rise-in 0.8s ease both;
 }
 
+/* Título principal */
 .hero-copy h1 {
     margin: 1rem 0;
     font-size: clamp(2.7rem, 5vw, 5.2rem);
@@ -122,6 +134,7 @@ nav a:hover,
     color: var(--yellow-primary);
 }
 
+/* Descripción */
 .hero-description {
     max-width: 500px;
     color: var(--text-sub);
@@ -129,6 +142,7 @@ nav a:hover,
     line-height: 1.7;
 }
 
+/* Botones */
 .hero-actions {
     display: flex;
     align-items: center;
@@ -141,6 +155,7 @@ nav a:hover,
     padding: 0.9rem 1.5rem;
 }
 
+/* Enlace */
 .text-link {
     color: var(--text-light);
     text-decoration: none;
@@ -153,6 +168,7 @@ nav a:hover,
     margin-left: 0.3rem;
 }
 
+/* Parte visual */
 .hero-visual {
     min-height: 470px;
     position: relative;
@@ -161,6 +177,7 @@ nav a:hover,
     animation: rise-in 0.9s 0.15s ease both;
 }
 
+/* Órbitas */
 .orbit {
     position: absolute;
     border: 1px solid rgba(243, 156, 18, 0.3);
@@ -171,19 +188,22 @@ nav a:hover,
 .orbit-one { width: 410px; height: 410px; }
 .orbit-two { width: 500px; height: 250px; transform: rotate(-28deg); }
 
+/* Tarjeta de código */
 .code-card {
     position: absolute;
-    top: 35px;
-    right: 3%;
-    width: min(340px, 72%);
+    top: 20px;
+    right: -10%;
+    width: min(230px, 50%);
     background: #101827;
     border: 1px solid #2b3e5d;
     border-radius: 10px;
     box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
     transform: rotate(3deg);
     z-index: 2;
+    animation: bob 4s ease-in-out infinite;
 }
 
+/* Parte superior del código */
 .code-top {
     display: flex;
     align-items: center;
@@ -205,32 +225,19 @@ nav a:hover,
 .code-result { color: #8d99ae; }
 .code-output { color: #90be6d; }
 
+/* Personaje */
 .hero-character {
     position: absolute;
     bottom: 8px;
-    left: 21%;
-    width: 250px;
-    max-width: 48%;
+    left: 10%;
+    width: 550px;
+    max-width: none;
     filter: drop-shadow(0 20px 16px rgba(0, 0, 0, 0.35));
     animation: bob 4s ease-in-out infinite;
     z-index: 3;
 }
 
-.float-chip {
-    position: absolute;
-    z-index: 4;
-    padding: 0.65rem 0.85rem;
-    border: 1px solid #3b536f;
-    border-radius: 6px;
-    background: rgba(21, 37, 61, 0.9);
-    color: var(--text-light);
-    font-size: 0.75rem;
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
-}
-
-.chip-one { bottom: 28%; left: 3%; animation: bob 4.5s 0.4s ease-in-out infinite; }
-.chip-two { right: 3%; bottom: 10%; animation: bob 4.5s 0.9s ease-in-out infinite; }
-
+/* Estadísticas */
 .home-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -243,6 +250,7 @@ nav a:hover,
 .home-stats strong { color: var(--yellow-primary); font-size: 1.7rem; }
 .home-stats span { color: var(--text-sub); font-size: 0.85rem; }
 
+/* Sección de aprendizaje */
 .offer-section {
     padding-top: 5rem;
     padding-bottom: 6rem;
@@ -265,6 +273,7 @@ nav a:hover,
     gap: 1rem;
 }
 
+/* Tarjetas */
 .offer-card {
     min-height: 255px;
     padding: 1.5rem;
@@ -282,6 +291,7 @@ nav a:hover,
 .offer-link { display: inline-block; margin-top: 0.8rem; color: var(--text-light); text-decoration: none; font-weight: bold; font-size: 0.9rem; }
 .offer-link span { color: var(--yellow-primary); margin-left: 0.35rem; }
 
+/* Footer */
 .site-footer {
     background: #0b1424;
     border-top: 1px solid #263957;
@@ -306,6 +316,7 @@ nav a:hover,
 .footer-mark { color: var(--yellow-primary); font-size: 1.8rem; font-weight: bold; }
 .footer-bottom { display: flex; justify-content: space-between; gap: 1rem; padding-top: 1.2rem; padding-bottom: 1.2rem; border-top: 1px solid #1a2942; color: #718096; font-size: 0.75rem; }
 
+/* Ajustes */
 .settings-page { max-width: 760px; padding-top: 4rem; }
 .settings-page h1 { font-size: 2.8rem; margin: 0 0 2rem; }
 .settings-panel { display: flex; align-items: center; gap: 1.5rem; padding: 2rem; background: var(--card-dark); border: 1px solid #263957; border-radius: 8px; }
@@ -314,10 +325,12 @@ nav a:hover,
 .settings-panel h2 { margin: 0; }
 .settings-email { margin-bottom: 0; color: var(--text-sub); }
 
+/* Animaciones */
 @keyframes rise-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Responsive */
 @media (max-width: 760px) {
     header { padding: 1rem; align-items: flex-start; }
     nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.7rem; }
@@ -337,6 +350,7 @@ nav a:hover,
     .footer-bottom span { display: block; margin-bottom: 0.4rem; }
 }
 
+/* Elementos generales */
 .badge-premium {
     background-color: var(--yellow-primary);
     color: #000;
@@ -352,7 +366,7 @@ nav a:hover,
     padding: 0 1rem;
 }
 
-/* Tarjeta de Formulario estilo PDF */
+/* Formulario */
 .auth-card {
     background-color: #ffffff;
     color: #333333;
@@ -388,6 +402,7 @@ nav a:hover,
     font-size: 1rem;
 }
 
+/* Botón */
 .btn-yellow {
     width: 100%;
     background-color: var(--yellow-primary);
@@ -407,6 +422,7 @@ nav a:hover,
     background-color: var(--yellow-hover);
 }
 
+/* Enlaces */
 .auth-links {
     text-align: center;
     margin-top: 1rem;
@@ -418,7 +434,7 @@ nav a:hover,
     text-decoration: none;
 }
 
-/* Módulos de Aprendizaje */
+/* Módulos de aprendizaje */
 .module-card {
     background-color: var(--card-dark);
     border-radius: 8px;
@@ -453,6 +469,7 @@ nav a:hover,
     gap: 1rem;
 }
 
+/* Botón de continuar */
 .btn-continuar-sm {
     background-color: var(--yellow-primary);
     color: #000;
@@ -460,4 +477,19 @@ nav a:hover,
     border-radius: 4px;
     text-decoration: none;
     font-weight: bold;
+}
+
+.progreso-barra {
+    background-color: #0f1b2d;
+    border-radius: 10px;
+    height: 8px;
+    margin-top: 0.7rem;
+    max-width: 450px;
+    overflow: hidden;
+}
+
+.progreso-barra-fill {
+    height: 100%;
+    background-color: var(--yellow-primary);
+    border-radius: 10px;
 }

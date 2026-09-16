@@ -1,25 +1,50 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <div class="container" style="text-align: center; padding-top: 2rem;">
+<p class="eyebrow">Pon en práctica lo aprendido</p>
 
-    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
-        Sección de práctica
-    </h1>
+<h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
+    Practica Python
+</h1>
 
-    <p style="color: var(--text-sub); max-width: 600px; margin: 0 auto 2rem auto; line-height: 1.6;">
-        Comienza a poner en práctica todo lo que has aprendido.
-        Mejora tus habilidades de resolución de problemas con ejercicios
-        diseñados para cada nivel de experiencia.
-    </p>
+<p style="color: var(--text-sub); max-width: 650px; margin: 0 auto 2rem auto; line-height: 1.6;">
+    En esta sección puedes poner en práctica los conceptos que aprendiste
+    en las rutas de Nivora. Resuelve ejercicios y mejora poco a poco tu
+    forma de pensar y escribir código.
+</p>
 
-    <img src="{{ url_for('static', filename='img/nivora_practica.png') }}"
-         alt="Practicar Python"
-         style="width: 260px; max-width: 70%; margin: 1rem auto 2rem; display: block;">
+<img src="{{ url_for('static', filename='img/nivora_practica.png') }}"
+     alt="Practicar Python"
+     style="width: 260px; max-width: 70%; margin: 1rem auto 2rem; display: block;">
 
-    <a href="#" class="btn-yellow" style="width: auto; padding: 0.8rem 3rem;">
-        Practicar
-    </a>
+<div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;">
 
+    <div class="module-card" style="text-align: left; max-width: 320px; flex: 1;">
+        <div class="module-info">
+            <h4>Desafío Fácil</h4>
+            <p>
+                Ejercicios directos para aplicar los conceptos aprendidos
+                y practicar paso a paso.
+            </p>
+        </div>
+    </div>
+
+    <div class="module-card" style="text-align: left; max-width: 320px; flex: 1;">
+        <div class="module-info">
+            <h4>Desafío Difícil</h4>
+            <p>
+                Problemas que requieren más razonamiento y te ayudan a
+                profundizar en tus habilidades.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<a href="#" class="btn-yellow" style="width: auto; padding: 0.8rem 3rem;">
+    Practicar
+</a>
 </div>
 {% endblock %}
