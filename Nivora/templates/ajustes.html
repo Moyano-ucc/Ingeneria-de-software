@@ -1,16 +1,41 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <section class="settings-page container">
-    <p class="eyebrow">Tu cuenta</p>
-    <h1>Ajustes</h1>
-    <div class="settings-panel">
-        <div class="settings-avatar">{{ usuario['nombre'][0]|upper }}</div>
-        <div>
-            <p class="settings-label">Nombre de usuario</p>
-            <h2>{{ usuario['nombre'] }}</h2>
-            <p class="settings-email">{{ usuario['email'] }}</p>
-        </div>
+
+<p class="eyebrow">Tu cuenta</p>
+
+<h1>Ajustes</h1>
+
+<div class="settings-panel">
+    <div class="settings-avatar">
+        {{ usuario['nombre'][0]|upper }}
     </div>
+
+    <div>
+        <p class="settings-label">Nombre de usuario</p>
+        <h2>{{ usuario['nombre'] }}</h2>
+        <p class="settings-email">{{ usuario['email'] }}</p>
+    </div>
+</div>
+
+<div style="margin-top: 2rem;">
+    <h2 style="margin-bottom: 1rem;">Seguridad</h2>
+
+    <div class="module-card">
+        <div class="module-info">
+            <h4>Cambiar contraseña</h4>
+            <p>
+                Actualiza la contraseña de tu cuenta para mantener
+                tu información segura.
+            </p>
+        </div>
+
+        <a href="#" class="btn-continuar-sm">
+            Cambiar contraseña
+        </a>
+    </div>
+</div>
 </section>
 {% endblock %}

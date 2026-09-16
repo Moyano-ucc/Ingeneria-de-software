@@ -1,32 +1,48 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <div class="container">
-    <h2 style="font-weight: normal; margin-bottom: 2rem;">
-        Hola, {{ usuario }}, continúa donde lo dejaste:
-    </h2>
+<section style="text-align: center; padding: 2rem 0 3rem;">
+    <p class="eyebrow">Ruta de aprendizaje</p>
 
-    {% for ruta in rutas %}
-    <div class="module-card">
-        <div style="display: flex; align-items: center;">
-            <span class="module-num">{{ ruta.id }}</span>
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
+        Aprende Python paso a paso
+    </h1>
 
-            <div class="module-info">
-                <h4>{{ ruta.nombre }}</h4>
-                <p>{{ ruta.descripcion }}</p>
-            </div>
-        </div>
+    <p style="color: var(--text-sub); max-width: 650px; margin: 0 auto; line-height: 1.6;">
+        En esta sección encontrarás las rutas de aprendizaje de Nivora.
+        Comienza desde los fundamentos y avanza poco a poco hacia nuevos
+        conceptos de Python mediante explicaciones, ejemplos y actividades.
+    </p>
+</section>
 
-        <div class="module-status">
-            <span style="color: var(--text-sub);">
-                {{ ruta.progreso }}
-            </span>
+<h2 style="font-weight: normal; margin-bottom: 1.5rem;">
+    Tus rutas de aprendizaje
+</h2>
 
-            {% if ruta.estado == 'Continuar' %}
-                <a href="#" class="btn-continuar-sm">Continuar</a>
-            {% endif %}
+{% for ruta in rutas %}
+<div class="module-card">
+    <div style="display: flex; align-items: center;">
+        <span class="module-num">{{ ruta.id }}</span>
+
+        <div class="module-info">
+            <h4>{{ ruta.nombre }}</h4>
+            <p>{{ ruta.descripcion }}</p>
         </div>
     </div>
-    {% endfor %}
+
+    <div class="module-status">
+        <span style="color: var(--text-sub);">
+            {{ ruta.progreso }}
+        </span>
+
+        {% if ruta.estado == 'Continuar' %}
+            <a href="#" class="btn-continuar-sm">Continuar</a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
 </div>
 {% endblock %}
