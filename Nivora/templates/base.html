@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -10,54 +11,75 @@
 <body>
     <header>
         <a href="/" class="logo">Nivora</a>
+    <nav>
+        <a href="/aprender">Aprender</a>
+        <a href="/practica">Practicar</a>
+        {% if session.get('usuario') %}
+            <a href="/progreso">Tu progreso</a>
+            <a href="/ajustes" class="user-menu">
+                <span class="user-avatar">{{ session['usuario']['nombre'][0]|upper }}</span>
+                {{ session['usuario']['nombre'] }}
+            </a>
+            <a href="/logout" class="nav-muted">Salir</a>
+        {% else %}
+            <a href="/login" class="nav-login">Iniciar sesión</a>
+        {% endif %}
+    </nav>
+</header>
 
-        <nav>
-            <a href="/aprender">Aprender</a>
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="footer-main container">
+
+        <div class="footer-brand">
+            <a href="/" class="logo">Nivora</a>
+            <p>
+                Aprende Python de forma clara, práctica
+                y paso a paso.
+            </p>
+        </div>
+
+        <div class="footer-column">
+            <h3>Explora</h3>
+            <a href="/aprender">Aprender Python</a>
             <a href="/practica">Practicar</a>
+
             {% if session.get('usuario') %}
-                <a href="/progreso">Tu progreso</a>
-                <a href="/ajustes" class="user-menu">
-                    <span class="user-avatar">{{ session['usuario']['nombre'][0]|upper }}</span>
-                    {{ session['usuario']['nombre'] }}
-                </a>
-                <a href="/logout" class="nav-muted">Salir</a>
-            {% else %}
-                <a href="/login" class="nav-login">Iniciar sesión</a>
-            {% endif %}
-        </nav>
-    </header>
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-main container">
-            <div class="footer-brand">
-                <a href="/" class="logo">Nivora</a>
-                <p>Aprender a programar puede sentirse claro, práctico y tuyo.</p>
-            </div>
-            <div class="footer-column">
-                <h3>Explora</h3>
-                <a href="/aprender">Rutas de aprendizaje</a>
-                <a href="/practica">Práctica Python</a>
                 <a href="/progreso">Mi progreso</a>
-            </div>
-            <div class="footer-column">
-                <h3>Nivora</h3>
+            {% endif %}
+        </div>
+
+        <div class="footer-column">
+            <h3>Cuenta</h3>
+
+            {% if session.get('usuario') %}
+                <a href="/ajustes">Ajustes</a>
+                <a href="/logout">Cerrar sesión</a>
+            {% else %}
                 <a href="/registro">Crear una cuenta</a>
                 <a href="/login">Iniciar sesión</a>
-                <a href="mailto:hola@nivora.dev">hola@nivora.dev</a>
-            </div>
-            <div class="footer-note">
-                <span class="footer-mark">&lt;/&gt;</span>
-                <p>Hecho para quienes empiezan<br>y para quienes quieren avanzar.</p>
-            </div>
+            {% endif %}
+
+            <a href="mailto:hola@nivora.dev">Contacto</a>
         </div>
-        <div class="footer-bottom container">
-            <span>© 2026 Nivora. Aprende, practica, construye.</span>
-            <span>Diseñado para aprender sin prisa.</span>
+
+        <div class="footer-note">
+            <span class="footer-mark">&lt;/&gt;</span>
+            <p>
+                Hecho para quienes empiezan<br>
+                y para quienes quieren avanzar.
+            </p>
         </div>
-    </footer>
+
+    </div>
+
+    <div class="footer-bottom container">
+        <span>© 2026 Nivora. Aprende, practica, construye.</span>
+        <span>Aprende a tu ritmo.</span>
+    </div>
+</footer>
 </body>
 </html>

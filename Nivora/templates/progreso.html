@@ -1,36 +1,70 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container" style="text-align: center; padding-top: 2rem;">
 
-    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
-        El progreso de {{ usuario['nombre'] }}
-    </h1>
+<div class="container">
 
-    <p style="color: var(--text-sub); max-width: 600px; margin: 0 auto 2rem auto; line-height: 1.6;">
-        Aquí podrás consultar tu avance en las unidades y actividades de Nivora.
-    </p>
+    <section style="text-align: center; padding: 2rem 0 3rem;">
+
+        <p class="eyebrow">Tu aprendizaje</p>
+
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
+            Tu progreso, {{ usuario['nombre'] }}
+        </h1>
+
+        <p style="color: var(--text-sub); max-width: 650px; margin: 0 auto; line-height: 1.6;">
+            Consulta tu avance en las diferentes rutas de aprendizaje
+            y continúa mejorando tus habilidades en Python.
+        </p>
+
+    </section>
+
+    <h2 style="font-weight: normal; margin-bottom: 1.5rem;">
+        Tus rutas de aprendizaje
+    </h2>
+
+    {% for ruta in progreso.rutas %}
 
     <div class="module-card">
-        <div class="module-info">
-            <h4>Fundamentos de Python</h4>
-            <p>Progreso: 0%</p>
+
+        <div style="display: flex; align-items: center; flex: 1;">
+
+            <span class="module-num">
+                {{ '%02d'|format(loop.index) }}
+            </span>
+
+            <div class="module-info">
+                <h4>{{ ruta.nombre }}</h4>
+
+                <p>
+                    {{ ruta.completadas }}
+                    de
+                    {{ ruta.total }}
+                    actividades completadas
+                </p>
+
+                <div class="progreso-barra">
+                    <div
+                        class="progreso-barra-fill"
+                        style="width: {{ ruta.porcentaje }}%;">
+                    </div>
+                </div>
+            </div>
+
         </div>
+
+        <div class="module-status">
+
+            <span style="color: var(--yellow-primary); font-weight: bold;">
+                {{ ruta.porcentaje }}%
+            </span>
+
+        </div>
+
     </div>
 
-    <div class="module-card">
-        <div class="module-info">
-            <h4>Control de flujo</h4>
-            <p>Progreso: 0%</p>
-        </div>
-    </div>
-
-    <div class="module-card">
-        <div class="module-info">
-            <h4>Listas y estructuras</h4>
-            <p>Progreso: 0%</p>
-        </div>
-    </div>
+    {% endfor %}
 
 </div>
+
 {% endblock %}
