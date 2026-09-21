@@ -1,27 +1,31 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="auth-card">
+<div class="auth-card register-card" data-registration-form>
     <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.2rem;">Nivora</h2>
-    <p style="color: #666; margin-bottom: 1.5rem;">Empieza a aprender python hoy</p>
+    <p style="color: #666; margin-bottom: 1.5rem;">Primero crea tu cuenta. Después elegiremos tu nivel de Python.</p>
 
     <form action="/registro" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label>Nombre de usuario</label>
-            <input type="text" name="nombre" placeholder="Tu nombre" required maxlength="30">
+            <input type="text" name="nombre" placeholder="Tu nombre" required minlength="2" maxlength="30">
+            <small>Usa entre 2 y 30 caracteres.</small>
         </div>
         <div class="form-group">
             <label>Correo electrónico</label>
             <input type="email" name="email" placeholder="nombre@correo.com" required>
+            <small>Lo usaremos para iniciar sesión.</small>
         </div>
 
         <div class="form-group">
             <label>Contraseña</label>
-            <input type="password" name="password" placeholder="••••••••" required>
+            <input type="password" name="password" placeholder="Mínimo 8 caracteres" required minlength="8">
+            <small>Debe tener al menos 8 caracteres. Nunca la compartas.</small>
         </div>
 
         <button type="submit" class="btn-yellow">
-            Crear cuenta
+            Continuar con mi nivel
         </button>
     </form>
 
@@ -33,4 +37,5 @@
         <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
     </div>
 </div>
+<script src="{{ url_for('static', filename='js/registro.js') }}"></script>
 {% endblock %}

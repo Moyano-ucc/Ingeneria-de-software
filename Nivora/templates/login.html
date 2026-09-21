@@ -6,6 +6,7 @@
     <p style="color: #666; margin-bottom: 1.5rem;">Iniciar sesión:</p>
 
     <form action="/login" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label>Correo electrónico</label>
             <input type="email" name="email" placeholder="nombre@correo.com" required>

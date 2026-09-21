@@ -8,7 +8,9 @@ def mostrar_progreso():
     if 'usuario' not in session:
         return redirect(url_for('auth.login'))
 
-    progreso = ProgresoModel.obtener_progreso()
+    progreso = ProgresoModel.obtener_progreso(
+        session['usuario'].get('id_persona'), session.get('progreso', {})
+    )
 
     return render_template(
         'progreso.html',

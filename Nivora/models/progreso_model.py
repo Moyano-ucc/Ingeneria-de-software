@@ -1,21 +1,27 @@
 class ProgresoModel:
 
     @staticmethod
-    def obtener_progreso():
+    def obtener_progreso(usuario_id=None, actividades=None):
+        actividades = actividades or {}
+        variables_completadas = sum(
+            int(data.get('completada', False) if isinstance(data, dict) else data)
+            for data in actividades.values()
+        )
+        general_completadas = variables_completadas
 
         return {
             "general": {
-                "completadas": 0,
+                "completadas": general_completadas,
                 "total": 16,
-                "porcentaje": 0
+                "porcentaje": round(general_completadas / 16 * 100)
             },
 
             "rutas": [
                 {
                     "nombre": "Fundamentos de Python",
-                    "completadas": 0,
+                    "completadas": variables_completadas,
                     "total": 4,
-                    "porcentaje": 0
+                    "porcentaje": round(variables_completadas / 4 * 100)
                 },
                 {
                     "nombre": "Control de flujo",

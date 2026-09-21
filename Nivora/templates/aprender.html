@@ -4,21 +4,29 @@
 
 <div class="container">
 <section style="text-align: center; padding: 2rem 0 3rem;">
-    <p class="eyebrow">Ruta de aprendizaje</p>
+    <p class="eyebrow">Unidades de aprendizaje</p>
 
     <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
         Aprende Python paso a paso
     </h1>
 
     <p style="color: var(--text-sub); max-width: 650px; margin: 0 auto; line-height: 1.6;">
-        En esta sección encontrarás las rutas de aprendizaje de Nivora.
+        En esta sección encontrarás las unidades de aprendizaje de Nivora.
         Comienza desde los fundamentos y avanza poco a poco hacia nuevos
         conceptos de Python mediante explicaciones, ejemplos y actividades.
     </p>
 </section>
 
+{% if session['usuario'].get('recomendacion') %}
+<section class="recommendation-panel">
+    <p class="eyebrow">Tu recomendación</p>
+    <h2>{{ session['usuario']['recomendacion']['titulo'] }}</h2>
+    <p>{{ session['usuario']['recomendacion']['detalle'] }}</p>
+</section>
+{% endif %}
+
 <h2 style="font-weight: normal; margin-bottom: 1.5rem;">
-    Tus rutas de aprendizaje
+    Tus unidades de aprendizaje
 </h2>
 
 {% for ruta in rutas %}
@@ -37,8 +45,10 @@
             {{ ruta.progreso }}
         </span>
 
-        {% if ruta.estado == 'Continuar' %}
-            <a href="#" class="btn-continuar-sm">Continuar</a>
+        {% if ruta.id == '01' %}
+            <a href="{{ url_for('aprender.ruta', route_id=ruta.id) }}" class="btn-continuar-sm">Ver unidad</a>
+        {% else %}
+            <span class="route-locked">Bloqueada</span>
         {% endif %}
     </div>
 </div>

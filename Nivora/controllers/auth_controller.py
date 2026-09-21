@@ -1,18 +1,20 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from models.usuario_model import UsuarioModel
+from services.auth_service import AuthService
 
 auth_bp = Blueprint('auth', __name__)
+auth_service = AuthService()
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email', '')
+        password = request.form.get('password', '')
 
-        usuario = UsuarioModel.autenticar(email, password)
+        usuario = auth_service.authenticate(email, password)
 
         if usuario:
+            session.clear()
             session['usuario'] = usuario
             return redirect(url_for('aprender.mostrar_aprender'))
 
@@ -27,15 +29,21 @@ def login():
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        nombre = request.form['nombre'].strip()
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
-
-        registrado, mensaje = UsuarioModel.registrar(nombre, email, password)
+        nombre = request.form.get('nombre', '')
+        email = request.form.get('email', '')
+        password = request.form.get('password', '')
+        registrado, mensaje = auth_service.register(nombre, email, password)
 
         if registrado:
-            session['usuario'] = {'nombre': nombre, 'email': email}
-            return redirect(url_for('aprender.mostrar_aprender'))
+            usuario = auth_service.authenticate(email, password)
+            if usuario is None:
+                return render_template(
+                    'registro.html',
+                    mensaje='La cuenta se creó, pero no se pudo iniciar la sesión'
+                ), 500
+            session.clear()
+            session['usuario'] = usuario
+            return redirect(url_for('auth.nivel'))
 
         return render_template(
             'registro.html',
@@ -43,6 +51,33 @@ def registro():
         )
 
     return render_template('registro.html')
+
+
+@auth_bp.route('/nivel', methods=['GET', 'POST'])
+def nivel():
+    if 'usuario' not in session:
+        return redirect(url_for('auth.registro'))
+
+    if request.method == 'POST':
+        if request.form.get('nivel_inicial') == 'no_se_nada':
+            recomendacion = auth_service.recommend_level(["", "", ""])
+        else:
+            quiz_answers = [
+                request.form.get(f'pregunta_{number}', '')
+                for number in range(1, 4)
+            ]
+            if any(not answer for answer in quiz_answers):
+                return render_template(
+                    'nivel.html', mensaje='Responde las tres preguntas para continuar'
+                ), 400
+            recomendacion = auth_service.recommend_level(quiz_answers)
+
+        session['usuario']['nivel'] = recomendacion['codigo']
+        session['usuario']['recomendacion'] = recomendacion
+        session.modified = True
+        return redirect(url_for('aprender.mostrar_aprender'))
+
+    return render_template('nivel.html')
 
 
 @auth_bp.route('/logout')
