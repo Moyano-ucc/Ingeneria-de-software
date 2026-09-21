@@ -1,27 +1,76 @@
+from database.database import AdaptativeConnection
+
+
 class UsuarioModel:
-    # Simulación de una base de datos en memoria
-    usuarios_db = []
+
+    db = AdaptativeConnection()
 
     @classmethod
     def registrar(cls, nombre, email, password):
-        # Verifica si el correo ya está registrado
-        for usuario in cls.usuarios_db:
-            if usuario['email'] == email:
+        conexion = cls.db.connect()
+
+        try:
+            usuario = conexion.execute(
+                "SELECT id_persona FROM PERSONA WHERE correo = ?",
+                (email,)
+            ).fetchone()
+
+            if usuario:
                 return False, "El correo electrónico ya está registrado"
 
-        cls.usuarios_db.append({
-            "nombre": nombre,
-            "email": email,
-            "password": password
-        })
+            cursor = conexion.execute(
+                """
+                INSERT INTO PERSONA (nombre, correo, contrasena)
+                VALUES (?, ?, ?)
+                """,
+                (nombre, email, password)
+            )
 
-        return True, "Cuenta creada exitosamente"
+            id_persona = cursor.lastrowid
+
+            conexion.execute(
+                """
+                INSERT INTO USUARIO (id_persona)
+                VALUES (?)
+                """,
+                (id_persona,)
+            )
+
+            conexion.commit()
+
+            return True, "Cuenta creada exitosamente"
+
+        except Exception:
+            conexion.rollback()
+            return False, "Error al crear la cuenta"
+
+        finally:
+            conexion.close()
 
     @classmethod
     def autenticar(cls, email, password):
-        # Verifica que las credenciales coincidan
-        for usuario in cls.usuarios_db:
-            if usuario['email'] == email and usuario['password'] == password:
-                return usuario
+        conexion = cls.db.connect()
 
-        return None
+        try:
+            usuario = conexion.execute(
+                """
+                SELECT
+                    PERSONA.id_persona,
+                    PERSONA.nombre,
+                    PERSONA.correo
+                FROM PERSONA
+                INNER JOIN USUARIO
+                    ON PERSONA.id_persona = USUARIO.id_persona
+                WHERE PERSONA.correo = ?
+                AND PERSONA.contrasena = ?
+                """,
+                (email, password)
+            ).fetchone()
+
+            if usuario:
+                return dict(usuario)
+
+            return None
+
+        finally:
+            conexion.close()
