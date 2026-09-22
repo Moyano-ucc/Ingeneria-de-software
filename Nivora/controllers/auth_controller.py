@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from repositories.progress_repository import ProgressRepository
 from services.auth_service import AuthService
 
 auth_bp = Blueprint('auth', __name__)
 auth_service = AuthService()
+progress_repository = ProgressRepository()
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -16,6 +18,7 @@ def login():
         if usuario:
             session.clear()
             session['usuario'] = usuario
+            session['progreso'] = progress_repository.find_by_user(usuario['id_persona'])
             return redirect(url_for('aprender.mostrar_aprender'))
 
         return render_template(
@@ -43,6 +46,7 @@ def registro():
                 ), 500
             session.clear()
             session['usuario'] = usuario
+            session['progreso'] = progress_repository.find_by_user(usuario['id_persona'])
             return redirect(url_for('auth.nivel'))
 
         return render_template(

@@ -1,9 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, session, request
 from models.ruta_model import RutaModel
+from repositories.progress_repository import ProgressRepository
 from services.auth_service import AuthService
 
 aprender_bp = Blueprint('aprender', __name__)
 auth_service = AuthService()
+progress_repository = ProgressRepository()
 
 
 @aprender_bp.route('/aprender')
@@ -36,6 +38,7 @@ def ruta(route_id):
     if route_id != '01':
         return redirect(url_for('aprender.mostrar_aprender'))
     actividades = session.get('progreso', {})
+    lecciones = RutaModel.obtener_lecciones()
     actividades = {
         lesson_id: activity if isinstance(activity, dict) else {'completada': bool(activity)}
         for lesson_id, activity in actividades.items()
@@ -43,7 +46,7 @@ def ruta(route_id):
     return render_template(
         'ruta.html',
         ruta_id=route_id,
-        lecciones=RutaModel.LESSONS,
+        lecciones=lecciones,
         actividades=actividades
     )
 
@@ -55,7 +58,7 @@ def leccion(lesson_id):
     lesson = RutaModel.obtener_leccion(lesson_id)
     if lesson is None:
         return redirect(url_for('aprender.mostrar_aprender'))
-    lessons = RutaModel.LESSONS
+    lessons = RutaModel.obtener_lecciones()
     index = next(i for i, item in enumerate(lessons) if item['id'] == lesson_id)
     previous_activity = session.get('progreso', {}).get(lessons[index - 1]['id'], {}) if index > 0 else True
     previous_completed = (
@@ -91,10 +94,13 @@ def completar_leccion(lesson_id):
         'puntuacion': score,
         'total': total,
     }
+    progress_repository.save_activity(
+        session['usuario'].get('id_persona'), lesson_id, progreso[lesson_id]
+    )
     session.modified = True
     next_lesson = next(
         (
-            item for item in RutaModel.LESSONS
+            item for item in RutaModel.obtener_lecciones()
             if item['numero'] > lesson['numero']
             and not (
                 session.get('progreso', {}).get(item['id'], {}).get('completada', False)
