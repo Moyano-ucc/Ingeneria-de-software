@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, render_template, redirect, url_for, session, request
 from models.ruta_model import RutaModel
 from repositories.progress_repository import ProgressRepository
@@ -31,14 +33,54 @@ def leccion_variables():
     return render_template('leccion.html', lesson=lesson, resultado=None)
 
 
-@aprender_bp.route('/aprender/ruta/<route_id>')
+@aprender_bp.route('/aprender/ruta/<route_id>', methods=['GET', 'POST'])
 def ruta(route_id):
     if 'usuario' not in session:
         return redirect(url_for('auth.login'))
+    if route_id == '02':
+        actividades = session.get('progreso', {})
+        if not RutaModel.unidad_dos_desbloqueada(actividades):
+            return redirect(url_for('aprender.mostrar_aprender'))
+        resultado = None
+        selected_ids = []
+        if request.method == 'POST':
+            try:
+                selected_ids = json.loads(request.form.get('sequence', '[]'))
+            except (TypeError, json.JSONDecodeError):
+                selected_ids = []
+            valid_ids = {piece['id'] for piece in RutaModel.PUZZLE_PIECES}
+            valid_sequence = (
+                isinstance(selected_ids, list)
+                and len(selected_ids) == len(valid_ids)
+                and all(isinstance(piece_id, str) for piece_id in selected_ids)
+                and set(selected_ids) == valid_ids
+            )
+            completada = valid_sequence and selected_ids == RutaModel.PUZZLE_SOLUTION
+            activity = {
+                'completada': completada,
+                'intentada': True,
+                'puntuacion': int(completada),
+                'total': 1,
+            }
+            actividades['unidad_02_puzzle'] = activity
+            session['progreso'] = actividades
+            session.modified = True
+            progress_repository.save_activity(
+                session['usuario'].get('id_persona'), 'unidad_02_puzzle', activity
+            )
+            resultado = 'correcto' if completada else 'incorrecto'
+        return render_template(
+            'unidad_dos.html',
+            pieces=RutaModel.PUZZLE_PIECES,
+            selected_ids=selected_ids,
+            resultado=resultado,
+        )
     if route_id != '01':
         return redirect(url_for('aprender.mostrar_aprender'))
     actividades = session.get('progreso', {})
-    lecciones = RutaModel.obtener_lecciones()
+    lecciones = [
+        lesson for lesson in RutaModel.obtener_lecciones() if lesson['unit_id'] == 1
+    ]
     actividades = {
         lesson_id: activity if isinstance(activity, dict) else {'completada': bool(activity)}
         for lesson_id, activity in actividades.items()

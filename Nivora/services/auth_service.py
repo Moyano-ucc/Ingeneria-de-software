@@ -1,4 +1,7 @@
+import hashlib
 import re
+import secrets
+import time
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -9,8 +12,9 @@ EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 class AuthService:
-    def __init__(self, users=None):
+    def __init__(self, users=None, reset_token_ttl=3600):
         self.users = users or UserRepository()
+        self.reset_token_ttl = reset_token_ttl
 
     def register(self, name, email, password, quiz_answers=None):
         name = (name or "").strip()
@@ -91,3 +95,24 @@ class AuthService:
             "nombre": user["nombre"],
             "email": user["correo"],
         }
+
+    def create_password_reset(self, email, ttl=None):
+        user = self.users.find_by_email((email or "").strip().lower())
+        if not user:
+            return None
+
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        self.users.create_password_reset(
+            user["id_persona"], token_hash,
+            time.time() + (self.reset_token_ttl if ttl is None else ttl),
+        )
+        return token
+
+    def reset_password(self, token, password):
+        if len(password or "") < 8:
+            return False
+        token_hash = hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+        return self.users.update_password_with_reset(
+            token_hash, generate_password_hash(password), time.time()
+        )

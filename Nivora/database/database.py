@@ -25,6 +25,23 @@ class DatabaseConnection:
     def _initialize_schema(connection):
         connection.executescript(
             """
+            CREATE TABLE IF NOT EXISTS PERSONA (
+                id_persona INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                correo TEXT NOT NULL UNIQUE,
+                contrasena TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS USUARIO (
+                id_persona INTEGER PRIMARY KEY,
+                FOREIGN KEY (id_persona) REFERENCES PERSONA(id_persona) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS PASSWORD_RESET (
+                token_hash TEXT PRIMARY KEY,
+                id_persona INTEGER NOT NULL,
+                expires_at REAL NOT NULL,
+                used_at REAL,
+                FOREIGN KEY (id_persona) REFERENCES PERSONA(id_persona) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS PROGRESO_LECCION (
                 id_persona INTEGER NOT NULL,
                 leccion_id TEXT NOT NULL,
