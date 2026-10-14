@@ -1,0 +1,23 @@
+[
+  "tests/test_app.py::test_completed_lesson_appears_in_progress",
+  "tests/test_app.py::test_failed_lesson_keeps_answers_and_does_not_complete",
+  "tests/test_app.py::test_health_endpoint",
+  "tests/test_app.py::test_lesson_requires_login",
+  "tests/test_app.py::test_level_page_recommends_starting_from_zero",
+  "tests/test_app.py::test_level_page_requires_login",
+  "tests/test_app.py::test_login_session_survives_next_request",
+  "tests/test_app.py::test_next_lesson_skips_completed_lesson",
+  "tests/test_app.py::test_password_recovery_routes_offer_and_accept_a_dev_reset_link",
+  "tests/test_app.py::test_perfect_lesson_hides_repeat_quiz_and_failed_lesson_is_incomplete",
+  "tests/test_app.py::test_post_without_csrf_is_rejected",
+  "tests/test_app.py::test_profile_change_password_opens_recovery_with_account_email",
+  "tests/test_app.py::test_restart_invalidates_previous_session",
+  "tests/test_app.py::test_unit_two_puzzle_unlocks_and_saves_a_correct_solution",
+  "tests/test_app.py::test_unit_two_stays_locked_until_all_first_unit_lessons_are_complete",
+  "tests/test_auth_service.py::test_lesson_requires_two_correct_answers",
+  "tests/test_auth_service.py::test_password_reset_is_single_use_and_persists_in_fresh_sqlite",
+  "tests/test_auth_service.py::test_password_reset_rejects_unknown_users_and_short_passwords",
+  "tests/test_auth_service.py::test_recommendation_uses_quiz_score",
+  "tests/test_auth_service.py::test_register_and_authenticate_hashes_password",
+  "tests/test_auth_service.py::test_register_rejects_short_password_and_invalid_email"
+]
