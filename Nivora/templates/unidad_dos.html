@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="container puzzle-page" data-code-puzzle data-initial-order='{{ selected_ids|tojson }}'>
+    <p class="eyebrow">Unidad 02 · Control de flujo</p>
+    <h1>Arma el programa</h1>
+    <p class="lesson-intro">Ordena los bloques para clasificar un número positivo como par o impar. Si no es positivo, el programa debe indicarlo.</p>
+
+    {% if resultado == 'correcto' %}
+        <div class="puzzle-feedback puzzle-success" role="status">
+            <strong>¡Código correcto!</strong> Completaste el rompecabezas de control de flujo.
+        </div>
+    {% elif resultado == 'incorrecto' %}
+        <div class="puzzle-feedback puzzle-error" role="status">Ese orden todavía no funciona. Ajusta los bloques e inténtalo de nuevo.</div>
+    {% endif %}
+
+    <div class="puzzle-layout">
+        <section class="puzzle-column" aria-labelledby="available-title">
+            <h2 id="available-title">Bloques disponibles</h2>
+            <div class="puzzle-pieces" data-puzzle-available>
+                {% for piece in pieces %}
+                    <button class="puzzle-piece" type="button" data-piece-id="{{ piece.id }}" data-code="{{ piece.code }}">{{ piece.code }}</button>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="puzzle-column" aria-labelledby="program-title">
+            <h2 id="program-title">Tu programa</h2>
+            <ol class="puzzle-board" data-puzzle-board aria-live="polite"></ol>
+            <p class="puzzle-empty" data-puzzle-empty>Selecciona un bloque para comenzar.</p>
+            <div class="puzzle-actions">
+                <button class="btn-secondary" type="button" data-puzzle-clear>Limpiar</button>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="sequence" value="[]" data-puzzle-sequence>
+                    <button class="btn-yellow" type="submit">Comprobar programa</button>
+                </form>
+            </div>
+            <p class="puzzle-live" data-puzzle-live role="status"></p>
+        </section>
+    </div>
+
+    <a href="{{ url_for('aprender.mostrar_aprender') }}" class="text-link puzzle-back">Volver a unidades</a>
+</section>
+<script src="{{ url_for('static', filename='js/puzzle.js') }}" defer></script>
+{% endblock %}

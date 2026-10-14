@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-card register-card level-card" data-level-form>
+    <p class="eyebrow">Tu punto de partida</p>
+    <h1>¿Cuánto sabes de Python?</h1>
+    <p class="level-intro">Responde preguntas de conceptos. Según tus aciertos te recomendaremos la siguiente lección.</p>
+
+    <form method="POST" action="{{ url_for('auth.nivel') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label class="level-option level-option-primary">
+            <input type="radio" name="nivel_inicial" value="no_se_nada" required>
+            <span><strong>No sé nada todavía</strong><small>Quiero comenzar desde cero, paso a paso.</small></span>
+        </label>
+
+        <label class="level-option">
+            <input type="radio" name="nivel_inicial" value="quiz" required>
+            <span><strong>Sé un poco o ya he programado</strong><small>Quiero responder unas preguntas básicas.</small></span>
+        </label>
+
+        <fieldset class="quiz-box level-quiz" hidden>
+            <legend>Quiz básico de Python</legend>
+            <div class="quiz-question">
+                <p>1. ¿Qué es una variable?</p>
+                <label><input type="radio" name="pregunta_1" value="variables"> Un nombre que guarda un valor</label>
+                <label><input type="radio" name="pregunta_1" value="funcion"> Una instrucción que repite todo</label>
+                <label><input type="radio" name="pregunta_1" value="error"> Un error de sintaxis</label>
+            </div>
+            <div class="quiz-question">
+                <p>2. ¿Qué tipo de dato es <code>25</code>?</p>
+                <label><input type="radio" name="pregunta_2" value="str"> Texto (<code>str</code>)</label>
+                <label><input type="radio" name="pregunta_2" value="int"> Entero (<code>int</code>)</label>
+                <label><input type="radio" name="pregunta_2" value="bool"> Booleano (<code>bool</code>)</label>
+            </div>
+            <div class="quiz-question">
+                <p>3. ¿Para qué sirve <code>if</code>?</p>
+                <label><input type="radio" name="pregunta_3" value="if"> Tomar decisiones según una condición</label>
+                <label><input type="radio" name="pregunta_3" value="print"> Imprimir siempre un texto</label>
+                <label><input type="radio" name="pregunta_3" value="import"> Crear una base de datos</label>
+            </div>
+        </fieldset>
+
+        {% if mensaje %}<p class="form-message">{{ mensaje }}</p>{% endif %}
+        <button type="submit" class="btn-yellow">Ver mi recomendación</button>
+    </form>
+</div>
+<script src="{{ url_for('static', filename='js/nivel.js') }}"></script>
+{% endblock %}
