@@ -112,11 +112,41 @@ nav a:hover,
     min-height: 580px;
     margin: 0 auto;
     padding: 5rem 2rem 3rem;
+    position: relative;
+    isolation: isolate;
     display: grid;
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     align-items: center;
     gap: 2rem;
     overflow: visible;
+}
+
+.home-hero::before,
+.home-hero::after {
+    content: "";
+    inset: 0 -1rem;
+    pointer-events: none;
+    position: absolute;
+    z-index: -1;
+}
+
+.home-hero::before {
+    background-image: linear-gradient(rgba(142, 202, 230, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(142, 202, 230, 0.055) 1px, transparent 1px);
+    background-size: 54px 54px;
+    mask-image: radial-gradient(ellipse at 55% 48%, #000 18%, transparent 78%);
+    animation: grid-drift 30s linear infinite;
+}
+
+.home-hero::after {
+    bottom: 0;
+    left: -35%;
+    right: auto;
+    top: 0;
+    width: 28%;
+    background: linear-gradient(105deg, transparent, rgba(43, 108, 176, 0.09), rgba(243, 156, 18, 0.055), transparent);
+    filter: blur(14px);
+    transform: skewX(-14deg);
+    animation: hero-sweep 16s ease-in-out infinite;
 }
 
 /* Texto pequeño */
@@ -129,6 +159,8 @@ nav a:hover,
 }
 
 .hero-copy {
+    position: relative;
+    z-index: 1;
     animation: rise-in 0.8s ease both;
 }
 
@@ -186,6 +218,7 @@ nav a:hover,
     place-items: center;
     animation: rise-in 0.9s 0.15s ease both;
     min-width: 0;
+    z-index: 1;
 }
 
 /* Órbitas */
@@ -196,8 +229,8 @@ nav a:hover,
     animation: spin 18s linear infinite;
 }
 
-.orbit-one { width: 410px; height: 410px; }
-.orbit-two { width: 500px; height: 250px; transform: rotate(-28deg); }
+.orbit-one { width: 410px; height: 410px; animation-duration: 28s; }
+.orbit-two { width: 500px; height: 250px; transform: rotate(-28deg); animation-duration: 21s; animation-direction: reverse; }
 
 /* Tarjeta de código */
 .code-card {
@@ -211,7 +244,7 @@ nav a:hover,
     box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
     transform: rotate(3deg);
     z-index: 2;
-    animation: bob 4s ease-in-out infinite;
+    animation: code-drift 5.5s ease-in-out infinite;
 }
 
 /* Parte superior del código */
@@ -246,7 +279,7 @@ nav a:hover,
     width: min(100%, 550px);
     max-width: 100%;
     filter: drop-shadow(0 20px 16px rgba(0, 0, 0, 0.35));
-    animation: bob 4s ease-in-out infinite;
+    animation: character-float 3s ease-in-out infinite;
     z-index: 3;
 }
 
@@ -257,6 +290,7 @@ nav a:hover,
     padding: 1.8rem 0;
     border-top: 1px solid #263957;
     border-bottom: 1px solid #263957;
+    animation: rise-in 0.8s 0.25s ease both;
 }
 
 .home-stats div { display: flex; align-items: baseline; justify-content: center; gap: 0.65rem; }
@@ -275,6 +309,7 @@ nav a:hover,
     justify-content: space-between;
     gap: 2rem;
     margin-bottom: 2.5rem;
+    animation: rise-in 0.8s 0.35s ease both;
 }
 
 .offer-heading h2 { margin: 0.7rem 0 0; font-size: 2.5rem; line-height: 1.05; }
@@ -294,7 +329,11 @@ nav a:hover,
     border-radius: 8px;
     background: rgba(21, 37, 61, 0.55);
     transition: transform 0.25s ease, border-color 0.25s ease;
+    animation: rise-in 0.7s ease both;
 }
+
+.offer-card:nth-child(2) { animation-delay: 0.12s; }
+.offer-card:nth-child(3) { animation-delay: 0.24s; }
 
 .offer-card:hover { transform: translateY(-6px); border-color: var(--yellow-primary); }
 .offer-card-featured { background: linear-gradient(145deg, #1c3653, var(--card-dark)); }
@@ -341,6 +380,11 @@ nav a:hover,
 /* Animaciones */
 @keyframes rise-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes character-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-18px) rotate(-1deg); } }
+@keyframes character-float-gentle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+@keyframes code-drift { 0%, 100% { transform: translateY(0) rotate(3deg); } 50% { transform: translateY(-12px) rotate(1deg); } }
+@keyframes grid-drift { to { background-position: 27px 27px; } }
+@keyframes hero-sweep { 0%, 18% { transform: translateX(-130%) skewX(-14deg); } 82%, 100% { transform: translateX(440%) skewX(-14deg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Responsive */
@@ -858,6 +902,12 @@ nav a:hover,
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    .home-hero::before { animation: grid-drift 60s linear infinite !important; }
+    .home-hero::after { animation: hero-sweep 30s ease-in-out infinite !important; }
+    .orbit-one { animation: spin 48s linear infinite !important; }
+    .orbit-two { animation: spin 60s linear reverse infinite !important; }
+    .code-card { animation: code-drift 8s ease-in-out infinite !important; }
+    .hero-character { animation: character-float-gentle 4s ease-in-out infinite !important; }
 }
 
 @media (max-width: 1000px) and (min-width: 761px) {
