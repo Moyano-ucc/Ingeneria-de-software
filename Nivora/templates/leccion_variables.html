@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<article class="lesson-page container">
+    <p class="eyebrow">Lección 01 · Fundamentos</p>
+    <h1>Variables y tipos de datos</h1>
+    <p class="lesson-intro">Una variable es un nombre que usamos para guardar un valor y utilizarlo después.</p>
+
+    <section class="lesson-section">
+        <h2>Crear una variable</h2>
+        <p>En Python usamos el signo <code>=</code> para guardar un valor:</p>
+        <pre><code>nombre = "Ana"
+edad = 20</code></pre>
+        <p>Ahora <code>nombre</code> contiene un texto y <code>edad</code> contiene un número entero.</p>
+    </section>
+
+    <section class="lesson-section">
+        <h2>Tipos básicos</h2>
+        <ul>
+            <li><code>str</code>: texto, por ejemplo <code>"Hola"</code>.</li>
+            <li><code>int</code>: números enteros, por ejemplo <code>10</code>.</li>
+            <li><code>float</code>: números decimales, por ejemplo <code>3.14</code>.</li>
+            <li><code>bool</code>: verdadero o falso, por ejemplo <code>True</code>.</li>
+        </ul>
+    </section>
+
+    <section class="lesson-exercise">
+        <h2>Completa la lección</h2>
+        <p>Responde las tres preguntas. Necesitas al menos 2 respuestas correctas para marcarla como completada.</p>
+        <form method="POST" action="{{ url_for('aprender.completar_leccion_variables') }}" class="lesson-quiz">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="quiz-question">
+                <p>1. ¿Qué nombre tiene el valor guardado en <code>nombre = "Ana"</code>?</p>
+                <label><input type="radio" name="respuesta_1" value="nombre" required> nombre</label>
+                <label><input type="radio" name="respuesta_1" value="Ana"> Ana</label>
+            </div>
+            <div class="quiz-question">
+                <p>2. ¿Qué tipo de dato es <code>20</code>?</p>
+                <label><input type="radio" name="respuesta_2" value="int" required> int</label>
+                <label><input type="radio" name="respuesta_2" value="str"> str</label>
+            </div>
+            <div class="quiz-question">
+                <p>3. ¿Cuál representa un valor verdadero o falso?</p>
+                <label><input type="radio" name="respuesta_3" value="True" required> True</label>
+                <label><input type="radio" name="respuesta_3" value="10"> 10</label>
+            </div>
+            {% if resultado %}<p class="form-message">{{ resultado }}</p>{% endif %}
+            <button type="submit" class="btn-yellow">Evaluar lección</button>
+        </form>
+    </section>
+
+    <a href="{{ url_for('aprender.mostrar_aprender') }}" class="btn-yellow lesson-back">Volver a mis unidades</a>
+</article>
+{% endblock %}

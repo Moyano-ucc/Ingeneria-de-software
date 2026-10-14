@@ -1,7 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for, session
+import json
+
+from flask import Blueprint, render_template, redirect, url_for, session, request
 from models.ruta_model import RutaModel
+from repositories.progress_repository import ProgressRepository
+from services.auth_service import AuthService
 
 aprender_bp = Blueprint('aprender', __name__)
+auth_service = AuthService()
+progress_repository = ProgressRepository()
 
 
 @aprender_bp.route('/aprender')
@@ -9,10 +15,144 @@ def mostrar_aprender():
     if 'usuario' not in session:
         return redirect(url_for('auth.login'))
 
-    rutas = RutaModel.obtener_rutas()
+    rutas = RutaModel.obtener_rutas(session.get('progreso', {}))
 
     return render_template(
         'aprender.html',
         rutas=rutas,
         usuario=session['usuario']['nombre']
     )
+
+
+@aprender_bp.route('/aprender/leccion/variables')
+def leccion_variables():
+    if 'usuario' not in session:
+        return redirect(url_for('auth.login'))
+
+    lesson = RutaModel.obtener_leccion('variables')
+    return render_template('leccion.html', lesson=lesson, resultado=None)
+
+
+@aprender_bp.route('/aprender/ruta/<route_id>', methods=['GET', 'POST'])
+def ruta(route_id):
+    if 'usuario' not in session:
+        return redirect(url_for('auth.login'))
+    if route_id == '02':
+        actividades = session.get('progreso', {})
+        if not RutaModel.unidad_dos_desbloqueada(actividades):
+            return redirect(url_for('aprender.mostrar_aprender'))
+        resultado = None
+        selected_ids = []
+        if request.method == 'POST':
+            try:
+                selected_ids = json.loads(request.form.get('sequence', '[]'))
+            except (TypeError, json.JSONDecodeError):
+                selected_ids = []
+            valid_ids = {piece['id'] for piece in RutaModel.PUZZLE_PIECES}
+            valid_sequence = (
+                isinstance(selected_ids, list)
+                and len(selected_ids) == len(valid_ids)
+                and all(isinstance(piece_id, str) for piece_id in selected_ids)
+                and set(selected_ids) == valid_ids
+            )
+            completada = valid_sequence and selected_ids == RutaModel.PUZZLE_SOLUTION
+            activity = {
+                'completada': completada,
+                'intentada': True,
+                'puntuacion': int(completada),
+                'total': 1,
+            }
+            actividades['unidad_02_puzzle'] = activity
+            session['progreso'] = actividades
+            session.modified = True
+            progress_repository.save_activity(
+                session['usuario'].get('id_persona'), 'unidad_02_puzzle', activity
+            )
+            resultado = 'correcto' if completada else 'incorrecto'
+        return render_template(
+            'unidad_dos.html',
+            pieces=RutaModel.PUZZLE_PIECES,
+            selected_ids=selected_ids,
+            resultado=resultado,
+        )
+    if route_id != '01':
+        return redirect(url_for('aprender.mostrar_aprender'))
+    actividades = session.get('progreso', {})
+    lecciones = [
+        lesson for lesson in RutaModel.obtener_lecciones() if lesson['unit_id'] == 1
+    ]
+    actividades = {
+        lesson_id: activity if isinstance(activity, dict) else {'completada': bool(activity)}
+        for lesson_id, activity in actividades.items()
+    }
+    return render_template(
+        'ruta.html',
+        ruta_id=route_id,
+        lecciones=lecciones,
+        actividades=actividades
+    )
+
+
+@aprender_bp.route('/aprender/leccion/<lesson_id>', methods=['GET'])
+def leccion(lesson_id):
+    if 'usuario' not in session:
+        return redirect(url_for('auth.login'))
+    lesson = RutaModel.obtener_leccion(lesson_id)
+    if lesson is None:
+        return redirect(url_for('aprender.mostrar_aprender'))
+    lessons = RutaModel.obtener_lecciones()
+    index = next(i for i, item in enumerate(lessons) if item['id'] == lesson_id)
+    previous_activity = session.get('progreso', {}).get(lessons[index - 1]['id'], {}) if index > 0 else True
+    previous_completed = (
+        previous_activity.get('completada', False)
+        if isinstance(previous_activity, dict)
+        else bool(previous_activity)
+    )
+    previous_attempt = (
+        previous_activity.get('intentada', False)
+        if isinstance(previous_activity, dict)
+        else False
+    )
+    if index > 0 and not previous_completed and not previous_attempt:
+        return redirect(url_for('aprender.ruta', route_id='01'))
+    return render_template('leccion.html', lesson=lesson, resultado=None)
+
+
+@aprender_bp.route('/aprender/leccion/<lesson_id>/completar', methods=['POST'])
+def completar_leccion(lesson_id):
+    if 'usuario' not in session:
+        return redirect(url_for('auth.login'))
+
+    lesson = RutaModel.obtener_leccion(lesson_id)
+    if lesson is None:
+        return redirect(url_for('aprender.mostrar_aprender'))
+    answers = [request.form.get(f'respuesta_{number}', '') for number in range(1, 4)]
+    results = [answer == correct for answer, correct in zip(answers, lesson['answers'])]
+    score, total = sum(results), len(lesson['answers'])
+    progreso = session.setdefault('progreso', {})
+    progreso[lesson_id] = {
+        'completada': score == total,
+        'intentada': True,
+        'puntuacion': score,
+        'total': total,
+    }
+    progress_repository.save_activity(
+        session['usuario'].get('id_persona'), lesson_id, progreso[lesson_id]
+    )
+    session.modified = True
+    next_lesson = next(
+        (
+            item for item in RutaModel.obtener_lecciones()
+            if item['numero'] > lesson['numero']
+            and not (
+                session.get('progreso', {}).get(item['id'], {}).get('completada', False)
+                if isinstance(session.get('progreso', {}).get(item['id'], {}), dict)
+                else session.get('progreso', {}).get(item['id'], False)
+            )
+        ),
+        None,
+    )
+    return render_template('leccion.html', lesson=lesson, resultado={
+        'score': score, 'total': total, 'results': results, 'answers': answers,
+        'completada': score == total, 'next_lesson': next_lesson
+    })
