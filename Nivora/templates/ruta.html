@@ -1,37 +1,110 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
 <section class="container route-page">
-    <p class="eyebrow">Unidad 01 · Fundamentos</p>
-    <h1>Fundamentos de Python</h1>
-    <p class="lesson-intro">Completa las lecciones en orden. Cada quiz aprobado desbloquea el siguiente.</p>
+
+    {% if ruta_id == '02' %}
+        <p class="eyebrow">Unidad 02 · Control de flujo</p>
+        <h1>Control de flujo en Python</h1>
+        <p class="lesson-intro">
+            Aprende a tomar decisiones y repetir instrucciones con Python.
+            Puedes avanzar por las lecciones o volver a repasar las que necesites.
+        </p>
+    {% else %}
+        <p class="eyebrow">Unidad 01 · Fundamentos</p>
+        <h1>Fundamentos de Python</h1>
+        <p class="lesson-intro">
+            Aprende las bases de Python paso a paso. Puedes volver a entrar
+            a las lecciones para practicar y reforzar lo aprendido.
+        </p>
+    {% endif %}
 
     <div class="lesson-list">
         {% for lesson in lecciones %}
-            {% set completed = actividades.get(lesson.id, {}).get('completada', False) %}
-            {% set attempted = actividades.get(lesson.id, {}).get('intentada', False) %}
+            {% set activity = actividades.get(lesson.id, {}) %}
+            {% set completed = activity.get('completada', False) %}
+            {% set attempted = activity.get('intentada', False) %}
             {% set previous = lecciones[loop.index0 - 1] if loop.index0 > 0 else none %}
-            {% set unlocked = loop.first or actividades.get(previous.id, {}).get('completada', False) or actividades.get(previous.id, {}).get('intentada', False) %}
-            <div class="lesson-row {{ 'is-complete' if completed else '' }} {{ 'is-locked' if not unlocked else '' }}">
-                <span class="lesson-number">{{ '%02d'|format(lesson.numero) }}</span>
+            {% set previous_activity = actividades.get(previous.id, {}) if previous else {} %}
+            {% set unlocked = loop.first or previous_activity.get('completada', False) or previous_activity.get('intentada', False) or completed or attempted %}
+
+            <article class="lesson-row {{ 'is-complete' if completed else '' }} {{ 'is-locked' if not unlocked else '' }}">
+
+                <span class="lesson-number">
+                    {{ '%02d'|format(lesson.numero) }}
+                </span>
+
                 <div class="lesson-row-copy">
                     <h2>{{ lesson.titulo }}</h2>
                     <p>{{ lesson.descripcion }}</p>
                 </div>
+
                 {% if completed %}
-                    <span class="lesson-status">Completada</span>
+                    <div class="lesson-actions">
+                        <span class="lesson-status">Completada</span>
+                        <a
+                            class="btn-continuar-sm"
+                            href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}"
+                        >
+                            Repasar lección
+                        </a>
+                    </div>
+
                 {% elif unlocked %}
                     <div class="lesson-actions">
-                        {% if attempted %}<span class="lesson-status lesson-incomplete">Incompleta</span>{% endif %}
-                        <a class="btn-continuar-sm" href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}">{% if attempted %}Repetir quiz{% else %}Comenzar lección{% endif %}</a>
+                        {% if attempted %}
+                                <span class="lesson-status lesson-incomplete">
+                                  Incompleta
+                            </span>
+                            <a
+                                class="btn-continuar-sm"
+                                href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}"
+                            >
+                                Repetir quiz
+                            </a>
+                        {% else %}
+                            <a
+                                class="btn-continuar-sm"
+                                href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}"
+                            >
+                                Comenzar lección
+                            </a>
+                        {% endif %}
                     </div>
+
                 {% else %}
                     <span class="lesson-status">Bloqueada</span>
                 {% endif %}
-            </div>
+
+            </article>
+        {% else %}
+            <p>Aún no hay lecciones disponibles en esta unidad.</p>
         {% endfor %}
     </div>
 
-    <a href="{{ url_for('aprender.mostrar_aprender') }}" class="text-link">Volver a unidades</a>
+    {% if ruta_id == '02' %}
+        <div class="lesson-section">
+            <h2>Actividad práctica adicional</h2>
+            <p>
+                Pon a prueba tu lógica organizando las instrucciones
+                del rompecabezas de Python.
+            </p>
+            <a
+                class="btn-yellow"
+                href="{{ url_for('aprender.ruta', route_id='02', actividad='rompecabezas') }}"
+            >
+                Practicar con el rompecabezas
+            </a>
+        </div>
+    {% endif %}
+
+    <a
+        href="{{ url_for('aprender.mostrar_aprender') }}"
+        class="text-link"
+    >
+        Volver a unidades
+    </a>
+
 </section>
 {% endblock %}

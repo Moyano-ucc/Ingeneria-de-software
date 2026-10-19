@@ -1,68 +1,559 @@
+
 {% extends 'base.html' %}
 
 {% block content %}
 <article class="lesson-page container">
-    <p class="eyebrow">Lección {{ '%02d'|format(lesson.numero) }} · Fundamentos</p>
-    <h1>{{ lesson.titulo }}</h1>
-    <p class="lesson-intro">{{ lesson.descripcion }}</p>
+    <p class="eyebrow">
+        Unidad {{ '%02d'|format(lesson['unit_id']) }}
+        · Lección {{ '%02d'|format(lesson['numero']) }}
+    </p>
+
+    <h1>{{ lesson['titulo'] }}</h1>
+    <p class="lesson-intro">{{ lesson['descripcion'] }}</p>
 
     <section class="lesson-section">
         <h2>Antes del quiz</h2>
-        {% if lesson.id == 'variables' %}
-            <p>Una variable guarda un valor. Python tiene tipos como <code>str</code>, <code>int</code>, <code>float</code> y <code>bool</code>.</p>
+
+        {% if lesson['id'] == 'variables' %}
+            <h3>1. ¿Qué es una variable?</h3>
+            <p>Una variable es un nombre que permite guardar y consultar un valor durante la ejecución de un programa. Se crea asignándole un valor mediante el operador <code>=</code>.</p>
             <pre><code>nombre = "Ana"
 edad = 20
-activo = True</code></pre>
-        {% elif lesson.id == 'operadores' %}
-            <p>Los operadores permiten calcular y comparar valores.</p>
-            <pre><code>suma = 3 + 4
-mayor = 5 &gt; 2</code></pre>
-        {% elif lesson.id == 'entrada_salida' %}
-            <p><code>print</code> muestra información y <code>input</code> recibe texto.</p>
-            <pre><code>nombre = input("Tu nombre: ")
+altura = 1.65
+estudia = True
+
+print(nombre)
+print(edad)
+print(altura)
+print(estudia)</code></pre>
+
+            <h3>2. Tipos de datos básicos</h3>
+            <ul>
+                <li><code>str</code>: texto, por ejemplo <code>"Hola"</code>.</li>
+                <li><code>int</code>: números enteros, como <code>20</code>.</li>
+                <li><code>float</code>: números decimales, como <code>3.5</code>.</li>
+                <li><code>bool</code>: valores lógicos <code>True</code> y <code>False</code>.</li>
+            </ul>
+            <pre><code>ciudad = "Bogotá"
+semestre = 6
+promedio = 4.2
+aprobado = True
+
+print(type(ciudad))
+print(type(semestre))
+print(type(promedio))
+print(type(aprobado))</code></pre>
+            <p>La función <code>type()</code> permite consultar el tipo de dato de una variable. Python determina el tipo según el valor asignado.</p>
+
+            <h3>3. Reglas para nombrar variables</h3>
+            <p>Los nombres pueden contener letras, números y guiones bajos, pero no pueden comenzar con un número ni contener espacios. Es recomendable utilizar nombres descriptivos.</p>
+            <pre><code># Correcto
+precio_producto = 15000
+cantidad = 2
+total = precio_producto * cantidad
+print(total)
+
+# Incorrecto: 2precio = 100
+# Incorrecto: precio producto = 100</code></pre>
+
+            <h3>4. Cambiar el valor de una variable</h3>
+            <p>Una variable puede recibir un nuevo valor durante la ejecución del programa.</p>
+            <pre><code>puntos = 10
+print(puntos)
+
+puntos = 15
+print(puntos)
+
+puntos = puntos + 5
+print(puntos)</code></pre>
+            <p>La última instrucción utiliza el valor actual de <code>puntos</code>, le suma cinco y guarda el resultado nuevamente.</p>
+
+            <h3>5. Mini reto</h3>
+            <p>Imagina que debes calcular el costo de varios productos. ¿Qué variables necesitarías para guardar el precio, la cantidad y el total? Intenta escribir el programa antes de continuar.</p>
+            <pre><code>precio = 4500
+cantidad = 3
+total = precio * cantidad
+
+print("Total a pagar:", total)</code></pre>
+
+        {% elif lesson['id'] == 'operadores' %}
+            <h3>1. Operadores aritméticos</h3>
+            <p>Permiten realizar operaciones matemáticas con valores numéricos.</p>
+            <pre><code>print(3 + 4)    # 7
+print(10 - 2)   # 8
+print(3 * 5)    # 15
+print(10 / 2)   # 5.0
+print(9 // 2)   # 4
+print(7 % 2)    # 1
+print(2 ** 3)   # 8</code></pre>
+            <ul>
+                <li><code>+</code>: suma.</li>
+                <li><code>-</code>: resta.</li>
+                <li><code>*</code>: multiplicación.</li>
+                <li><code>/</code>: división, que puede producir decimales.</li>
+                <li><code>//</code>: división entera.</li>
+                <li><code>%</code>: residuo de una división.</li>
+                <li><code>**</code>: potencia.</li>
+            </ul>
+
+            <h3>2. Operadores de comparación</h3>
+            <p>Comparan dos valores y producen un resultado lógico: <code>True</code> o <code>False</code>.</p>
+            <pre><code>edad = 20
+
+print(edad > 18)   # True
+print(edad == 20)  # True
+print(edad != 15)  # True
+print(edad < 18)   # False
+print(edad >= 20)  # True
+print(edad <= 17)  # False</code></pre>
+            <p>Recuerda que <code>=</code> asigna un valor, mientras que <code>==</code> compara si dos valores son iguales.</p>
+
+            <h3>3. Orden de las operaciones</h3>
+            <p>Python sigue las reglas matemáticas de precedencia. Los paréntesis permiten indicar qué operación debe realizarse primero.</p>
+            <pre><code>resultado = 2 + 3 * 4
+otro = (2 + 3) * 4
+
+print(resultado)  # 14
+print(otro)       # 20</code></pre>
+
+            <h3>4. Operadores con variables</h3>
+            <p>Los operadores se pueden combinar con variables para resolver situaciones cotidianas.</p>
+            <pre><code>precio = 12000
+cantidad = 3
+subtotal = precio * cantidad
+descuento = 5000
+total = subtotal - descuento
+
+print("Subtotal:", subtotal)
+print("Descuento:", descuento)
+print("Total:", total)</code></pre>
+
+            <h3>5. Mini reto</h3>
+            <p>Calcula el promedio de tres notas y utiliza una comparación para comprobar si el resultado es mayor o igual a 3.0.</p>
+            <pre><code>nota1 = 4.0
+nota2 = 3.5
+nota3 = 2.5
+
+promedio = (nota1 + nota2 + nota3) / 3
+
+print("Promedio:", promedio)
+print("¿Aprobó?", promedio >= 3.0)</code></pre>
+
+        {% elif lesson['id'] == 'entrada_salida' %}
+            <h3>1. Mostrar información con print()</h3>
+            <p>La función <code>print()</code> muestra texto, variables y resultados en la consola.</p>
+            <pre><code>nombre = "Laura"
+edad = 19
+
+print("Hola")
+print(nombre)
+print("Edad:", edad)</code></pre>
+
+            <h3>2. Recibir información con input()</h3>
+            <p>La función <code>input()</code> permite que una persona escriba un dato. El valor recibido inicialmente es texto, incluso cuando se escribe un número.</p>
+            <pre><code>nombre = input("Escribe tu nombre: ")
+print("Bienvenido,", nombre)</code></pre>
+
+            <h3>3. Convertir los datos recibidos</h3>
+            <pre><code>edad = int(input("Escribe tu edad: "))
+altura = float(input("Escribe tu altura: "))
+
+print("El próximo año tendrás", edad + 1)
+print("Tu altura es", altura)</code></pre>
+            <p>Utiliza <code>int()</code> para convertir a entero y <code>float()</code> para convertir a decimal. Si el texto no representa un número válido, la conversión puede producir un error.</p>
+
+            <h3>4. Un ejemplo completo</h3>
+            <pre><code>producto = input("Producto: ")
+precio = float(input("Precio: "))
+cantidad = int(input("Cantidad: "))
+
+total = precio * cantidad
+
+print("Producto:", producto)
+print("Total a pagar:", total)</code></pre>
+
+            <h3>5. ¿Qué diferencia hay entre entrada y salida?</h3>
+            <p>La entrada permite recibir información del usuario; la salida permite mostrar información o resultados. En un programa pueden utilizarse varias veces.</p>
+
+        {% elif lesson['id'] == 'repaso_fundamentos' %}
+            <h3>1. Combinar los fundamentos</h3>
+            <p>En un programa podemos recibir datos, guardarlos en variables, convertirlos, operar con ellos y mostrar el resultado.</p>
+            <pre><code>nombre = input("Nombre del estudiante: ")
+nota1 = float(input("Primera nota: "))
+nota2 = float(input("Segunda nota: "))
+nota3 = float(input("Tercera nota: "))
+
+promedio = (nota1 + nota2 + nota3) / 3
+
+print("Estudiante:", nombre)
+print("Promedio:", round(promedio, 2))</code></pre>
+
+            <h3>2. Analicemos el programa</h3>
+            <ol>
+                <li><code>input()</code> recibe el nombre.</li>
+                <li><code>float()</code> convierte las notas a números decimales.</li>
+                <li>Las variables guardan los valores introducidos.</li>
+                <li>Los operadores calculan el promedio.</li>
+                <li><code>round()</code> redondea el promedio a dos decimales.</li>
+                <li><code>print()</code> presenta el resultado.</li>
+            </ol>
+
+            <h3>3. Validar un resultado</h3>
+            <pre><code>promedio = 3.8
+aprobado = promedio >= 3.0
+
+print("Promedio:", promedio)
+print("¿Aprobó?", aprobado)</code></pre>
+
+            <h3>4. Reto de repaso</h3>
+            <p>Modifica el ejemplo para calcular el promedio de cuatro notas y mostrar el resultado con dos decimales.</p>
+
+        {% elif lesson['id'] == 'conversion_datos' %}
+            <h3>1. ¿Por qué convertir datos?</h3>
+            <p>En Python, los datos recibidos por <code>input()</code> son cadenas de texto. Para realizar operaciones matemáticas, normalmente debemos convertirlos al tipo adecuado.</p>
+            <pre><code>numero_texto = "25"
+numero_entero = int(numero_texto)
+numero_decimal = float(numero_texto)
+texto = str(numero_entero)
+
+print(numero_entero + 5)  # 30
+print(numero_decimal)    # 25.0
+print(texto)             # 25</code></pre>
+
+            <h3>2. Conversiones comunes</h3>
+            <ul>
+                <li><code>int("12")</code> produce el entero <code>12</code>.</li>
+                <li><code>float("3.5")</code> produce el decimal <code>3.5</code>.</li>
+                <li><code>str(100)</code> produce el texto <code>"100"</code>.</li>
+            </ul>
+
+            <h3>3. Cuidado con los errores</h3>
+            <pre><code>edad = int("20")       # Correcto
+precio = float("8.5")  # Correcto
+
+# int("hola") produciría un ValueError</code></pre>
+            <p>Antes de convertir un dato, comprueba que su contenido tenga el formato esperado.</p>
+
+            <h3>4. Aplicación práctica</h3>
+            <pre><code>cantidad = int(input("Cantidad de productos: "))
+precio = float(input("Precio por producto: "))
+
+total = cantidad * precio
+print("Total:", total)</code></pre>
+
+        {% elif lesson['id'] == 'cadenas_texto' %}
+            <h3>1. ¿Qué es una cadena?</h3>
+            <p>Una cadena de texto es una secuencia de caracteres escrita normalmente entre comillas simples o dobles.</p>
+            <pre><code>mensaje = "Hola, Python"
+nombre = 'Camila'
+
+print(mensaje)
 print(nombre)</code></pre>
+
+            <h3>2. Unir cadenas</h3>
+            <pre><code>nombre = "Pedro"
+saludo = "Hola, " + nombre
+
+print(saludo)
+print("Hola,", nombre)</code></pre>
+            <p>Puedes unir cadenas con <code>+</code> o pasar varios valores a <code>print()</code>, que los separa por defecto con un espacio.</p>
+
+            <h3>3. Métodos útiles</h3>
+            <pre><code>texto = "Aprender Python"
+
+print(texto.lower())
+print(texto.upper())
+print(texto.title())
+print(len(texto))</code></pre>
+            <p><code>lower()</code> convierte a minúsculas, <code>upper()</code> a mayúsculas, <code>title()</code> pone en mayúscula inicial las palabras y <code>len()</code> cuenta los caracteres.</p>
+
+            <h3>4. Saltos de línea</h3>
+            <pre><code>print("Primera línea\nSegunda línea")</code></pre>
+            <p>El carácter especial <code>\n</code> introduce un salto de línea dentro del texto.</p>
+
+            <h3>5. Interpolación con f-strings</h3>
+            <p>Una f-string permite insertar variables dentro de un texto usando llaves.</p>
+            <pre><code>nombre = "Laura"
+edad = 19
+
+print(f"Hola, {nombre}. Tienes {edad} años.")</code></pre>
+
+        {% elif lesson['id'] == 'condicionales' %}
+            <h3>1. Tomar decisiones</h3>
+            <p>Las estructuras condicionales permiten ejecutar instrucciones dependiendo de si una condición es verdadera o falsa.</p>
+            <pre><code>edad = 20
+
+if edad >= 18:
+    print("Eres mayor de edad")
+else:
+    print("Eres menor de edad")</code></pre>
+            <p>La condición se escribe después de <code>if</code> y termina con dos puntos. El bloque debe tener la indentación correcta.</p>
+
+            <h3>2. Usar elif</h3>
+            <pre><code>nota = 4.2
+
+if nota >= 4.5:
+    print("Excelente")
+elif nota >= 3.0:
+    print("Aprobaste")
+else:
+    print("Debes reforzar el tema")</code></pre>
+            <p><code>elif</code> permite evaluar otra condición cuando la anterior no se cumple. <code>else</code> cubre los casos restantes.</p>
+
+            <h3>3. Condiciones con variables</h3>
+            <pre><code>saldo = 50000
+compra = 35000
+
+if saldo >= compra:
+    print("Compra aprobada")
+else:
+    print("Saldo insuficiente")</code></pre>
+
+            <h3>4. Errores comunes</h3>
+            <ul>
+                <li>Olvidar los dos puntos al final de la condición.</li>
+                <li>Escribir el bloque sin la indentación necesaria.</li>
+                <li>Usar <code>=</code> cuando se quiere comparar con <code>==</code>.</li>
+            </ul>
+
+        {% elif lesson['id'] == 'operadores_logicos' %}
+            <h3>1. Combinar condiciones</h3>
+            <p>Los operadores lógicos permiten combinar o modificar condiciones para tomar decisiones más precisas.</p>
+            <ul>
+                <li><code>and</code>: ambas condiciones deben ser verdaderas.</li>
+                <li><code>or</code>: basta con que una condición sea verdadera.</li>
+                <li><code>not</code>: invierte el valor lógico.</li>
+            </ul>
+            <pre><code>edad = 20
+tiene_documento = True
+
+print(edad >= 18 and tiene_documento)
+print(edad < 18 or tiene_documento)
+print(not tiene_documento)</code></pre>
+
+            <h3>2. Aplicarlos en un programa</h3>
+            <pre><code>edad = int(input("Edad: "))
+tiene_permiso = input("¿Tienes permiso? (si/no): ")
+
+if edad >= 18 and tiene_permiso == "si":
+    print("Puedes ingresar")
+else:
+    print("No cumples los requisitos")</code></pre>
+            <p>Combinar condiciones permite comprobar varios requisitos antes de ejecutar una acción.</p>
+
+            <h3>3. Practicar el razonamiento lógico</h3>
+            <pre><code>llueve = False
+tengo_paraguas = True
+
+if not llueve or tengo_paraguas:
+    print("Puedo salir")</code></pre>
+
+        {% elif lesson['id'] == 'ciclo_for' %}
+            <h3>1. Repetir instrucciones</h3>
+            <p>El ciclo <code>for</code> permite recorrer una secuencia de valores y ejecutar un bloque de código por cada elemento.</p>
+            <pre><code>for numero in range(5):
+    print(numero)</code></pre>
+            <p>Este ejemplo imprime los números del 0 al 4. El límite final de <code>range(5)</code> no se incluye.</p>
+
+            <h3>2. Definir un inicio y un final</h3>
+            <pre><code>for numero in range(1, 6):
+    print(numero)</code></pre>
+            <p><code>range(1, 6)</code> comienza en 1 y llega hasta 5. También puedes especificar un paso.</p>
+            <pre><code>for numero in range(0, 10, 2):
+    print(numero)</code></pre>
+
+            <h3>3. Usar un acumulador</h3>
+            <pre><code>total = 0
+
+for numero in range(1, 4):
+    total = total + numero
+
+print("Suma:", total)</code></pre>
+            <p>La variable <code>total</code> acumula los valores de cada repetición. El resultado es 6.</p>
+
+            <h3>4. Recorrer una lista</h3>
+            <pre><code>frutas = ["manzana", "pera", "uva"]
+
+for fruta in frutas:
+    print(fruta)</code></pre>
+
+        {% elif lesson['id'] == 'ciclo_while' %}
+            <h3>1. Repetir mientras se cumpla una condición</h3>
+            <p>El ciclo <code>while</code> repite un bloque mientras su condición sea verdadera.</p>
+            <pre><code>contador = 1
+
+while contador <= 5:
+    print(contador)
+    contador += 1</code></pre>
+            <p>El contador aumenta en cada repetición. Cuando llega a 6, la condición deja de cumplirse y el ciclo termina.</p>
+
+            <h3>2. Usar break</h3>
+            <pre><code>contador = 0
+
+while True:
+    contador += 1
+    print(contador)
+
+    if contador == 3:
+        break</code></pre>
+            <p><code>break</code> termina el ciclo inmediatamente. En este ejemplo, el programa se detiene cuando el contador llega a 3.</p>
+
+            <h3>3. Evitar ciclos infinitos accidentales</h3>
+            <p>Si la condición nunca cambia y continúa siendo verdadera, el ciclo puede no terminar. Actualiza las variables que intervienen en la condición o define una salida cuando sea apropiado.</p>
+
+            <h3>4. Acumular valores</h3>
+            <pre><code>contador = 1
+total = 0
+
+while contador <= 3:
+    total += contador
+    contador += 1
+
+print("Total:", total)</code></pre>
+
         {% else %}
-            <p>Las listas agrupan valores. Puedes consultar su tamaño y agregar elementos.</p>
-            <pre><code>frutas = ["manzana"]
-frutas.append("pera")</code></pre>
+            <p>Estudia los conceptos de esta lección y revisa los ejemplos antes de responder el cuestionario.</p>
         {% endif %}
     </section>
 
     <section class="lesson-exercise">
         <h2>Quiz de la lección</h2>
-        <p>Necesitas responder correctamente las 3 preguntas para completarla.</p>
-        <form method="POST" action="{{ url_for('aprender.completar_leccion', lesson_id=lesson.id) }}" class="lesson-quiz">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            {% for question, options in lesson.questions %}
-                <div class="quiz-question">
-                    <p>{{ loop.index }}. {{ question }}</p>
-                    {% set question_number = loop.index %}
-                    {% for value, label in options %}
-                        <label><input type="radio" name="respuesta_{{ question_number }}" value="{{ value }}" required {% if resultado and resultado.answers[question_number - 1] == value %}checked{% endif %} {% if resultado %}disabled{% endif %}> {{ label }}</label>
-                    {% endfor %}
-                    {% if resultado and resultado.results[loop.index0] %}<span class="answer-result answer-correct">Correcta</span>{% elif resultado %}<span class="answer-result answer-wrong">Incorrecta</span>{% endif %}
-                </div>
-            {% endfor %}
-            {% if resultado %}<p class="quiz-score">Resultado: {{ resultado.score }}/{{ resultado.total }}</p>{% endif %}
-            {% if not resultado %}
-                <button type="submit" class="btn-yellow">Evaluar quiz</button>
-            {% else %}
-                <p class="quiz-score">Quiz evaluado{% if not resultado.completada %}. Pulsa “Repetir quiz” para intentarlo de nuevo.{% else %}: lección completada.{% endif %}</p>
-            {% endif %}
-        </form>
-    </section>
+        <p>Responde las preguntas para comprobar lo aprendido. Puedes repetir el cuestionario si necesitas practicar. Si ya habías completado esta lección, tu progreso anterior se conserva.</p>
 
-    {% if resultado %}
-        <div class="quiz-actions">
-            {% if not resultado.completada %}
-                <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}" class="btn-secondary">Repetir quiz</a>
-            {% endif %}
-            {% if resultado.next_lesson %}
-                <a href="{{ url_for('aprender.leccion', lesson_id=resultado.next_lesson.id) }}" class="btn-yellow">Siguiente lección</a>
+        {% if resultado %}
+            <p class="quiz-score">
+                Quiz evaluado: {{ resultado.score }}/{{ resultado.total }} respuestas correctas.
+            </p>
+
+            {% if resultado.score == resultado.total %}
+                <p class="quiz-score">¡Excelente! Respondiste todas las preguntas correctamente.</p>
             {% else %}
-                <a href="{{ url_for('aprender.ruta', route_id='01') }}" class="btn-yellow">Ver ruta completa</a>
+                <p class="quiz-score">Sigue practicando. Revisa tus respuestas e inténtalo de nuevo.</p>
             {% endif %}
-        </div>
-    {% endif %}
+
+            {% if resultado.detalle_respuestas is defined and resultado.detalle_respuestas %}
+                <div class="quiz-results">
+                    <h3>Revisión de tus respuestas</h3>
+
+                    {% for item in resultado.detalle_respuestas %}
+                        <div class="quiz-question">
+                            {% if item.correcta %}
+                                <p><strong>Correcta.</strong> {{ item.question }}</p>
+                            {% else %}
+                                <p><strong>Incorrecta.</strong> {{ item.question }}</p>
+                            {% endif %}
+
+                            <p>Tu respuesta: {{ item.respuesta_usuario }}</p>
+                            <p>Respuesta correcta: {{ item.respuesta_correcta }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="quiz-actions">
+                {% if resultado.score != resultado.total %}
+                    <a
+                        href="{{ url_for('aprender.leccion', lesson_id=lesson['id']) }}?repetir=1"
+                        class="btn-yellow"
+                    >
+                        Repetir quiz
+                    </a>
+                {% endif %}
+
+                {% if resultado.next_lesson %}
+                    <a
+                        href="{{ url_for('aprender.leccion', lesson_id=resultado.next_lesson['id']) }}"
+                        class="btn-secondary"
+                    >
+                        Siguiente lección
+                    </a>
+                {% else %}
+                    <a
+                        href="{{ url_for('aprender.ruta', route_id='%02d'|format(lesson['unit_id'])) }}"
+                        class="btn-secondary"
+                    >
+                        Volver a la unidad
+                    </a>
+                {% endif %}
+            </div>
+
+            {% if resultado.score != resultado.total %}
+                <form
+                    method="POST"
+                    action="{{ url_for('aprender.completar_leccion', lesson_id=lesson['id']) }}"
+                    class="lesson-quiz"
+                >
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token() }}"
+                    >
+
+                    {% for question, options in lesson['questions'] %}
+                        {% set question_number = loop.index %}
+
+                        <div class="quiz-question">
+                            <p>{{ question_number }}. {{ question }}</p>
+
+                            {% for value, label in options %}
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="respuesta_{{ question_number }}"
+                                        value="{{ value }}"
+                                        {% if respuestas_seleccionadas is defined and respuestas_seleccionadas.get('respuesta_' ~ question_number) == value %}checked{% endif %}
+                                        required
+                                    >
+                                    {{ label }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn-yellow">
+                        Evaluar nuevamente
+                    </button>
+                </form>
+            {% endif %}
+
+        {% else %}
+            <form
+                method="POST"
+                action="{{ url_for('aprender.completar_leccion', lesson_id=lesson['id']) }}"
+                class="lesson-quiz"
+            >
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                {% for question, options in lesson['questions'] %}
+                    {% set question_number = loop.index %}
+
+                    <div class="quiz-question">
+                        <p>{{ question_number }}. {{ question }}</p>
+
+                        {% for value, label in options %}
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="respuesta_{{ question_number }}"
+                                    value="{{ value }}"
+                                    {% if respuestas_seleccionadas is defined and respuestas_seleccionadas.get('respuesta_' ~ question_number) == value %}checked{% endif %}
+                                    required
+                                >
+                                {{ label }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn-yellow">
+                    Evaluar quiz
+                </button>
+            </form>
+        {% endif %}
+    </section>
 </article>
 {% endblock %}
