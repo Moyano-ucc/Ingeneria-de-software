@@ -3,26 +3,39 @@ class ProgresoModel:
     @staticmethod
     def obtener_progreso(usuario_id=None, actividades=None):
         actividades = actividades or {}
-        unit_one_activities = {
-            key: value for key, value in actividades.items()
-            if key != "unidad_02_puzzle"
-        }
-        variables_completadas = sum(
-            int(data.get('completada', False) if isinstance(data, dict) else data)
-            for data in unit_one_activities.values()
-        )
-        unit_two_completed = int(
+        unit_one_ids = ("variables", "operadores", "entrada_salida", "repaso_fundamentos")
+        unit_two_ids = ("condicionales", "while", "for", "control_rompecabezas")
+        unit_three_ids = ("listas", "estructuras", "recorrido", "proyecto_estructuras")
+        unit_four_ids = ("funciones", "parametros", "alcance", "proyecto_final")
+        def count(ids):
+            return sum(
+                int(
+                    data.get("completada", False)
+                    if isinstance(data, dict)
+                    else bool(data)
+                )
+                for data in (actividades.get(key, {}) for key in ids)
+            )
+
+        variables_completadas = count(unit_one_ids)
+        unit_two_lessons_completed = count(unit_two_ids)
+        puzzle_completed = int(
             actividades.get("unidad_02_puzzle", {}).get("completada", False)
             if isinstance(actividades.get("unidad_02_puzzle", {}), dict)
             else bool(actividades.get("unidad_02_puzzle", False))
         )
-        general_completadas = variables_completadas + unit_two_completed
+        unit_two_completed = min(unit_two_lessons_completed + puzzle_completed, 5)
+        unit_three_completed = count(unit_three_ids)
+        unit_four_completed = count(unit_four_ids)
+        general_completadas = variables_completadas + unit_two_completed + unit_three_completed + unit_four_completed
+        general_completadas = min(general_completadas, 17)
+        total = 17
 
         return {
             "general": {
                 "completadas": general_completadas,
-                "total": 13,
-                "porcentaje": round(general_completadas / 13 * 100)
+                "total": total,
+                "porcentaje": round(general_completadas / total * 100)
             },
 
             "rutas": [
@@ -35,20 +48,20 @@ class ProgresoModel:
                 {
                     "nombre": "Control de flujo",
                     "completadas": unit_two_completed,
-                    "total": 1,
-                    "porcentaje": unit_two_completed * 100
+                    "total": 5,
+                    "porcentaje": round(unit_two_completed / 5 * 100)
                 },
                 {
                     "nombre": "Listas y estructuras",
-                    "completadas": 0,
+                    "completadas": unit_three_completed,
                     "total": 4,
-                    "porcentaje": 0
+                    "porcentaje": round(unit_three_completed / 4 * 100)
                 },
                 {
                     "nombre": "Funciones",
-                    "completadas": 0,
+                    "completadas": unit_four_completed,
                     "total": 4,
-                    "porcentaje": 0
+                    "porcentaje": round(unit_four_completed / 4 * 100)
                 }
             ]
         }

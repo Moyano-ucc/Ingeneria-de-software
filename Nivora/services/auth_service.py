@@ -1,6 +1,7 @@
 import hashlib
 import re
 import secrets
+import sqlite3
 import time
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -16,7 +17,16 @@ class AuthService:
         self.users = users or UserRepository()
         self.reset_token_ttl = reset_token_ttl
 
-    def register(self, name, email, password, quiz_answers=None):
+    @staticmethod
+    def password_is_strong(password):
+        password = password or ""
+        return (
+            len(password) >= 8
+            and any(character.isalpha() for character in password)
+            and any(character.isdigit() for character in password)
+        )
+
+    def register(self, name, email, password, confirmation=None):
         name = (name or "").strip()
         email = (email or "").strip().lower()
 
@@ -24,15 +34,17 @@ class AuthService:
             return False, "El nombre debe tener entre 2 y 30 caracteres"
         if not EMAIL_PATTERN.fullmatch(email):
             return False, "Introduce un correo electrónico válido"
-        if len(password or "") < 8:
-            return False, "La contraseña debe tener al menos 8 caracteres"
+        if confirmation is not None and password != confirmation:
+            return False, "Las contraseñas no coinciden"
+        if not self.password_is_strong(password):
+            return False, "Usa al menos 8 caracteres, con letras y números"
         if self.users.find_by_email(email):
             return False, "El correo electrónico ya está registrado"
 
         try:
             self.users.create(name, email, generate_password_hash(password))
-        except Exception:
-            return False, "Error al crear la cuenta"
+        except sqlite3.IntegrityError:
+            return False, "El correo electrónico ya está registrado"
         return True, "Cuenta creada exitosamente"
 
     @staticmethod
@@ -110,7 +122,7 @@ class AuthService:
         return token
 
     def reset_password(self, token, password):
-        if len(password or "") < 8:
+        if not self.password_is_strong(password):
             return False
         token_hash = hashlib.sha256((token or "").encode("utf-8")).hexdigest()
         return self.users.update_password_with_reset(

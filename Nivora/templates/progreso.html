@@ -19,6 +19,17 @@
 
     </section>
 
+    <section class="overall-progress" aria-label="Progreso general">
+        <div>
+            <p class="eyebrow">Avance general</p>
+            <strong>{{ progreso.general.completadas }} de {{ progreso.general.total }} actividades</strong>
+        </div>
+        <strong>{{ progreso.general.porcentaje }}%</strong>
+        <div class="progreso-barra">
+            <div class="progreso-barra-fill" style="width: {{ progreso.general.porcentaje }}%;"></div>
+        </div>
+    </section>
+
     <h2 style="font-weight: normal; margin-bottom: 1.5rem;">
         Tus unidades de aprendizaje
     </h2>

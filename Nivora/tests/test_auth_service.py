@@ -61,6 +61,19 @@ def test_register_rejects_short_password_and_invalid_email():
     assert service.register("Ana", "ana@example.com", "short")[0] is False
 
 
+def test_registration_requires_a_matching_letter_and_number_password():
+    service = AuthService(FakeUsers())
+
+    assert service.register("Ana", "ana@example.com", "letters-only")[0] is False
+    assert service.register("Ana", "ana@example.com", "12345678")[0] is False
+    assert service.register(
+        "Ana",
+        "ana@example.com",
+        "clave1234",
+        "clave12345",
+    )[0] is False
+
+
 def test_recommendation_uses_quiz_score():
     assert AuthService.recommend_level(["", "", ""])["codigo"] == "inicial"
     assert AuthService.recommend_level(["variables", "int", "no"])["codigo"] == "basico"
@@ -83,8 +96,11 @@ def test_password_reset_is_single_use_and_persists_in_fresh_sqlite(tmp_path):
     token = service.create_password_reset("ANA@example.com", ttl=60)
 
     assert token
-    assert service.reset_password(token, "new-password") is True
-    assert check_password_hash(users.find_by_email("ana@example.com")["contrasena"], "new-password")
+    assert service.reset_password(token, "new-password-123") is True
+    assert check_password_hash(
+        users.find_by_email("ana@example.com")["contrasena"],
+        "new-password-123",
+    )
     assert service.reset_password(token, "another-password") is False
 
 
@@ -93,3 +109,14 @@ def test_password_reset_rejects_unknown_users_and_short_passwords():
 
     assert service.create_password_reset("missing@example.com") is None
     assert service.reset_password("invalid-token", "short") is False
+    assert service.reset_password("invalid-token", "letters-only") is False
+
+
+def test_database_creates_a_custom_parent_directory(tmp_path):
+    database_path = tmp_path / "azure-data" / "nivora.db"
+    database = DatabaseConnection(config={"database_path": str(database_path)})
+
+    connection = database.connect()
+    connection.close()
+
+    assert database_path.exists()

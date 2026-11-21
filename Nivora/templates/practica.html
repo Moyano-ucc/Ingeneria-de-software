@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="container" style="text-align: center; padding-top: 2rem;">
-<p class="eyebrow">Pon en práctica lo aprendido</p>
+<p class="eyebrow">{{ 'Retos interactivos' if ejercicio.tipo else 'Pon en práctica lo aprendido' }}</p>
 
 <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
     Practica Python
@@ -19,32 +19,50 @@
      alt="Practicar Python"
      style="width: 260px; max-width: 70%; margin: 1rem auto 2rem; display: block;">
 
-<div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2rem;">
+<div class="practice-grid">
+    <aside class="practice-menu">
+        {% for item in ejercicios %}
+            <a href="{{ url_for('practica.mostrar_practica', ejercicio=item.id) }}" class="{{ 'active' if item.id == ejercicio.id else '' }}">
+                <strong>{{ item.nivel }}</strong>
+                <span>{{ item.pregunta }}</span>
+            </a>
+        {% endfor %}
+    </aside>
 
-    <div class="module-card" style="text-align: left; max-width: 320px; flex: 1;">
-        <div class="module-info">
-            <h4>Desafío Fácil</h4>
-            <p>
-                Ejercicios directos para aplicar los conceptos aprendidos
-                y practicar paso a paso.
+    <form method="POST" class="practice-editor">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="ejercicio" value="{{ ejercicio.id }}">
+        <p class="eyebrow">{{ ejercicio.nivel }}</p>
+        <h2>{{ ejercicio.pregunta }}</h2>
+        {% if ejercicio.tipo %}
+            <section
+                class="practice-puzzle"
+                data-practice-puzzle
+                data-kind="{{ ejercicio.tipo }}"
+                data-config='{{ ejercicio.rompecabezas|tojson }}'
+                data-answer='{{ (resultado.respuesta if resultado else {})|tojson }}'
+            >
+                <input type="hidden" name="respuesta" value="{}" data-practice-answer>
+                <div data-practice-interaction></div>
+                <p class="practice-puzzle-live" data-practice-live role="status" aria-live="polite"></p>
+            </section>
+        {% else %}
+            <label for="codigo">Tu código</label>
+            <textarea id="codigo" name="codigo" rows="8" required>{{ resultado.codigo if resultado else '' }}</textarea>
+        {% endif %}
+        <p class="practice-hint">Pista: {{ ejercicio.pista }}</p>
+        {% if resultado %}
+            <p class="{{ 'answer-correct' if resultado.correcto else 'answer-wrong' }}" role="status">
+                {% if resultado.correcto %}
+                    {{ '¡Respuesta correcta!' if not ejercicio.tipo else '¡Reto completado! Las piezas están en su lugar.' }}
+                {% else %}
+                    {{ 'Todavía no. Revisa la pista e inténtalo nuevamente.' if not ejercicio.tipo else 'Aún no está listo. Prueba otra combinación.' }}
+                {% endif %}
             </p>
-        </div>
-    </div>
-
-    <div class="module-card" style="text-align: left; max-width: 320px; flex: 1;">
-        <div class="module-info">
-            <h4>Desafío Difícil</h4>
-            <p>
-                Problemas que requieren más razonamiento y te ayudan a
-                profundizar en tus habilidades.
-            </p>
-        </div>
-    </div>
-
+        {% endif %}
+        <button type="submit" class="btn-yellow">{{ 'Comprobar reto' if ejercicio.tipo else 'Evaluar solución' }}</button>
+    </form>
 </div>
-
-<a href="#" class="btn-yellow" style="width: auto; padding: 0.8rem 3rem;">
-    Practicar
-</a>
 </div>
+<script src="{{ url_for('static', filename='js/practica.js') }}" defer></script>
 {% endblock %}

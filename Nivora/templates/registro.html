@@ -5,33 +5,37 @@
     <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.2rem;">Nivora</h2>
     <p style="color: #666; margin-bottom: 1.5rem;">Primero crea tu cuenta. Después elegiremos tu nivel de Python.</p>
 
-    <form action="/registro" method="POST">
+    <form action="/registro" method="POST" autocomplete="off">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
-            <label>Nombre de usuario</label>
-            <input type="text" name="nombre" placeholder="Tu nombre" required minlength="2" maxlength="30">
+            <label for="nombre">Nombre de usuario</label>
+            <input id="nombre" type="text" name="nombre" placeholder="Tu nombre" autocomplete="off" required minlength="2" maxlength="30" aria-invalid="{{ 'true' if field_errors.nombre else 'false' }}" aria-describedby="nombre-error">
             <small>Usa entre 2 y 30 caracteres.</small>
+            <small id="nombre-error" class="field-error" role="alert" {% if not field_errors.nombre %}hidden{% endif %}>{{ field_errors.nombre|default('') }}</small>
         </div>
         <div class="form-group">
-            <label>Correo electrónico</label>
-            <input type="email" name="email" placeholder="nombre@correo.com" required>
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" name="email" placeholder="nombre@correo.com" autocomplete="off" required aria-invalid="{{ 'true' if field_errors.email else 'false' }}" aria-describedby="email-error">
             <small>Lo usaremos para iniciar sesión.</small>
+            <small id="email-error" class="field-error" role="alert" {% if not field_errors.email %}hidden{% endif %}>{{ field_errors.email|default('') }}</small>
         </div>
 
         <div class="form-group">
-            <label>Contraseña</label>
-            <input type="password" name="password" placeholder="Mínimo 8 caracteres" required minlength="8">
-            <small>Debe tener al menos 8 caracteres. Nunca la compartas.</small>
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" name="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" aria-invalid="{{ 'true' if field_errors.password else 'false' }}" aria-describedby="password-hint password-error">
+            <small id="password-hint">Usa al menos 8 caracteres, con letras y números.</small>
+            <small id="password-error" class="field-error" role="alert" {% if not field_errors.password %}hidden{% endif %}>{{ field_errors.password|default('') }}</small>
+        </div>
+        <div class="form-group">
+            <label for="confirmacion">Confirma tu contraseña</label>
+            <input id="confirmacion" type="password" name="confirmacion" placeholder="Escribe de nuevo tu contraseña" autocomplete="new-password" required minlength="8" aria-invalid="{{ 'true' if field_errors.confirmacion else 'false' }}" aria-describedby="confirmacion-error">
+            <small id="confirmacion-error" class="field-error" role="alert" {% if not field_errors.confirmacion %}hidden{% endif %}>{{ field_errors.confirmacion|default('') }}</small>
         </div>
 
         <button type="submit" class="btn-yellow">
             Continuar con mi nivel
         </button>
     </form>
-
-    {% if mensaje %}
-        <p class="form-message">{{ mensaje }}</p>
-    {% endif %}
 
     <div class="auth-links">
         <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
