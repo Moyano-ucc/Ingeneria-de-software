@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -48,8 +49,43 @@ def render_template(
     )
 
 
-def redirect(url: str, status_code: int = 302) -> RedirectResponse:
-    return RedirectResponse(url=url, status_code=status_code)
+def relative_url(url) -> str:
+    """Return only the path and query of an application URL.
+
+    ``request.url_for`` builds absolute URLs from the ``Host`` header received
+    by Uvicorn. Behind a reverse proxy (GitHub Codespaces, Azure, Nginx) that
+    header is usually the internal address (``localhost:8000``), so an
+    absolute ``Location`` sends the browser to a host it cannot reach. A
+    relative ``Location`` is resolved by the browser against the domain it is
+    already using, which works locally and behind any proxy.
+    """
+    parts = urlsplit(str(url))
+    path = parts.path or "/"
+    return f"{path}?{parts.query}" if parts.query else path
+
+
+def redirect(url, status_code: int = 302) -> RedirectResponse:
+    return RedirectResponse(url=relative_url(url), status_code=status_code)
+
+
+def public_url(request: Request, url) -> str:
+    """Build an absolute URL for links that leave the browser (e-mails).
+
+    Priority: ``NIVORA_PUBLIC_URL`` > proxy headers (``X-Forwarded-Host`` and
+    ``X-Forwarded-Proto``, sent by Codespaces and most proxies) > request URL.
+    """
+    path = relative_url(url)
+    configured = getattr(request.app.state.settings, "PUBLIC_BASE_URL", None)
+    if configured:
+        return f"{configured.rstrip('/')}{path}"
+    forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
+    if forwarded_host:
+        forwarded_proto = (
+            request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
+            or request.url.scheme
+        )
+        return f"{forwarded_proto}://{forwarded_host}{path}"
+    return f"{request.url.scheme}://{request.url.netloc}{path}"
 
 
 def error_page(request: Request, message: str, status_code: int) -> HTMLResponse:
