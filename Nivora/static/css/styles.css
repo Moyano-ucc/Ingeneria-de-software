@@ -982,6 +982,10 @@ nav a:hover,
     margin-top: 1.5rem;
 }
 
+.quiz-actions-inline {
+    margin-top: 0.5rem;
+}
+
 .quiz-actions .btn-yellow,
 .btn-secondary {
     width: auto;

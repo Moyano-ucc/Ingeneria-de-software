@@ -353,7 +353,7 @@ def _validate_puzzle_answer(exercise, raw_answer):
 )
 async def mostrar_practica(request: Request):
     if "usuario" not in request.session:
-        return redirect(str(request.url_for("auth.login")))
+        return redirect(request.url_for("auth.login"))
 
     form = await request.form() if request.method == "POST" else {}
     ejercicio_id = (
@@ -388,7 +388,7 @@ async def mostrar_practica(request: Request):
             ejercicio=ejercicio_id
         )
         return redirect(
-            str(destination),
+            destination,
             status_code=303,
         )
 

@@ -92,6 +92,20 @@ class DatabaseConnection:
         }
         if "codigo" not in lesson_columns:
             connection.execute("ALTER TABLE LECCION ADD COLUMN codigo TEXT")
+        progress_columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(PROGRESO_LECCION)"
+            ).fetchall()
+        }
+        if "intentos" not in progress_columns:
+            connection.execute(
+                "ALTER TABLE PROGRESO_LECCION ADD COLUMN intentos INTEGER NOT NULL DEFAULT 0"
+            )
+        if "respuestas" not in progress_columns:
+            connection.execute(
+                "ALTER TABLE PROGRESO_LECCION ADD COLUMN respuestas TEXT"
+            )
 
         units = [
             (1, "Fundamentos de Python", "Aprende variables, tipos de datos, operadores y entrada y salida de datos.", 1),

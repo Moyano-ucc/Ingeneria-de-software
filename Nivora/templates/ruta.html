@@ -19,7 +19,10 @@
                     <p>{{ lesson.descripcion }}</p>
                 </div>
                 {% if completed %}
-                    <span class="lesson-status">Completada</span>
+                    <div class="lesson-actions">
+                        <span class="lesson-status">Completada</span>
+                        <a class="btn-continuar-sm" href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}?repetir=1">Repasar</a>
+                    </div>
                 {% elif unlocked %}
                     <div class="lesson-actions">
                         {% if attempted %}<span class="lesson-status lesson-incomplete">Incompleta</span>{% endif %}

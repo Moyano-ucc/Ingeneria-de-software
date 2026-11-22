@@ -36,6 +36,11 @@
                 <button type="submit" class="btn-yellow">Evaluar quiz</button>
             {% else %}
                 <p class="quiz-score">Quiz evaluado{% if not resultado.completada %}. Pulsa “Repetir quiz” para intentarlo de nuevo.{% else %}: lección completada.{% endif %}</p>
+                {% if not resultado.completada %}
+                    <div class="quiz-actions quiz-actions-inline">
+                        <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}?repetir=1" class="btn-secondary">Repetir quiz</a>
+                    </div>
+                {% endif %}
             {% endif %}
         </form>
     </section>
@@ -51,8 +56,13 @@
 
     {% if resultado %}
         <div class="quiz-actions">
+            {% if resultado.completada %}
+                <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}?repetir=1" class="btn-secondary">Repasar lección</a>
+            {% endif %}
             {% if not resultado.completada %}
-                <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}" class="btn-secondary">Repetir quiz</a>
+                {% if resultado.leccion_completada %}
+                    <a href="{{ url_for('aprender.ruta', route_id='%02d'|format(lesson.unit_id)) }}" class="btn-yellow">Volver a la unidad</a>
+                {% endif %}
             {% elif resultado.next_lesson %}
                 <a href="{{ url_for('aprender.leccion', lesson_id=resultado.next_lesson.id) }}" class="btn-yellow">Siguiente lección</a>
             {% elif resultado.next_route_id %}

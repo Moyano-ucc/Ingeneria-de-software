@@ -140,15 +140,15 @@ class RutaModel:
             second_unit_lessons = [lesson for lesson in lessons if lesson["unit_id"] == 2]
             third_unit_lessons = [lesson for lesson in lessons if lesson["unit_id"] == 3]
             unit_two_unlocked = bool(first_unit_lessons) and all(
-                cls._is_completed(actividades.get(lesson["id"], {}))
+                cls.actividad_completada(actividades.get(lesson["id"], {}))
                 for lesson in first_unit_lessons
             )
             unit_three_unlocked = bool(second_unit_lessons) and all(
-                cls._is_completed(actividades.get(lesson["id"], {}))
+                cls.actividad_completada(actividades.get(lesson["id"], {}))
                 for lesson in second_unit_lessons
-            ) and cls._is_completed(actividades.get("unidad_02_puzzle", {}))
+            ) and cls.actividad_completada(actividades.get("unidad_02_puzzle", {}))
             unit_four_unlocked = bool(third_unit_lessons) and all(
-                cls._is_completed(actividades.get(lesson["id"], {}))
+                cls.actividad_completada(actividades.get(lesson["id"], {}))
                 for lesson in third_unit_lessons
             )
             routes = []
@@ -158,7 +158,7 @@ class RutaModel:
                     if lesson["unit_id"] == unit["id_unidad"]
                 ]
                 completed = sum(
-                    cls._is_completed(actividades.get(lesson["id"], {}))
+                    cls.actividad_completada(actividades.get(lesson["id"], {}))
                     for lesson in unit_lessons
                 )
                 unlocked = unit["id_unidad"] == 1
@@ -170,10 +170,10 @@ class RutaModel:
                     unlocked = unit_four_unlocked
                 if unit["id_unidad"] == 2:
                     completed = sum(
-                        cls._is_completed(actividades.get(lesson["id"], {}))
+                        cls.actividad_completada(actividades.get(lesson["id"], {}))
                         for lesson in unit_lessons
                     ) + int(
-                        cls._is_completed(actividades.get("unidad_02_puzzle", {}))
+                        cls.actividad_completada(actividades.get("unidad_02_puzzle", {}))
                     )
                     lesson_count = len(unit_lessons) + 1
                 else:
@@ -204,12 +204,12 @@ class RutaModel:
             lesson for lesson in cls.obtener_lecciones() if lesson["unit_id"] == 1
         ]
         return bool(first_unit_lessons) and all(
-            cls._is_completed(actividades.get(lesson["id"], {}))
+            cls.actividad_completada(actividades.get(lesson["id"], {}))
             for lesson in first_unit_lessons
         )
 
     @staticmethod
-    def _is_completed(activity):
+    def actividad_completada(activity):
         if isinstance(activity, dict):
             return bool(activity.get("completada"))
         return bool(activity)

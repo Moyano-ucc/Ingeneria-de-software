@@ -26,14 +26,14 @@ def _consume_field_errors(request: Request, form_name: str) -> dict:
 def _redirect_with_field_errors(request: Request, form_name: str, fields: dict):
     request.session[FORM_FEEDBACK_KEY] = {"form": form_name, "fields": fields}
     route_name = "auth.login" if form_name == "login" else "auth.registro"
-    return redirect(str(request.url_for(route_name)), status_code=303)
+    return redirect(request.url_for(route_name), status_code=303)
 
 
 @auth_router.api_route("/login", methods=["GET", "POST"], name="auth.login")
 async def login(request: Request):
     if request.method == "GET":
         if "usuario" in request.session:
-            return redirect(str(request.url_for("aprender.mostrar_aprender")))
+            return redirect(request.url_for("aprender.mostrar_aprender"))
         return render_template(
             request,
             "login.html",
@@ -53,7 +53,7 @@ async def login(request: Request):
                 usuario["id_persona"]
             )
             return redirect(
-                str(request.url_for("aprender.mostrar_aprender")),
+                request.url_for("aprender.mostrar_aprender"),
                 status_code=303,
             )
 
@@ -203,7 +203,7 @@ async def registro(request: Request):
                 if usuario.get("recomendacion")
                 else "auth.nivel"
             )
-            return redirect(str(request.url_for(destination)))
+            return redirect(request.url_for(destination))
         return render_template(
             request,
             "registro.html",
@@ -238,7 +238,7 @@ async def registro(request: Request):
                 usuario["id_persona"]
             )
             return redirect(
-                str(request.url_for("auth.nivel")),
+                request.url_for("auth.nivel"),
                 status_code=303,
             )
 
@@ -256,12 +256,12 @@ async def registro(request: Request):
 @auth_router.api_route("/nivel", methods=["GET", "POST"], name="auth.nivel")
 async def nivel(request: Request):
     if "usuario" not in request.session:
-        return redirect(str(request.url_for("auth.registro")))
+        return redirect(request.url_for("auth.registro"))
     if (
         request.method == "GET"
         and request.session["usuario"].get("recomendacion")
     ):
-        return redirect(str(request.url_for("aprender.mostrar_aprender")))
+        return redirect(request.url_for("aprender.mostrar_aprender"))
 
     if request.method == "POST":
         form = await request.form()
@@ -284,7 +284,7 @@ async def nivel(request: Request):
         usuario["nivel"] = recomendacion["codigo"]
         usuario["recomendacion"] = recomendacion
         request.session["usuario"] = usuario
-        return redirect(str(request.url_for("aprender.mostrar_aprender")))
+        return redirect(request.url_for("aprender.mostrar_aprender"))
 
     return render_template(request, "nivel.html")
 
@@ -292,13 +292,13 @@ async def nivel(request: Request):
 @auth_router.post("/logout", name="auth.logout")
 async def logout(request: Request):
     request.session.clear()
-    return redirect(str(request.url_for("home")), status_code=303)
+    return redirect(request.url_for("home"), status_code=303)
 
 
 @auth_router.get("/ajustes", name="auth.ajustes")
 async def ajustes(request: Request):
     if "usuario" not in request.session:
-        return redirect(str(request.url_for("auth.login")))
+        return redirect(request.url_for("auth.login"))
 
     return render_template(
         request,
