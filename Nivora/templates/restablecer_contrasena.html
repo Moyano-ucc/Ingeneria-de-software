@@ -6,6 +6,10 @@
         <h1>Contraseña actualizada</h1>
         <p>{{ mensaje }}</p>
         <a class="btn-yellow" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+    {% elif enlace_invalido %}
+        <h1>Enlace no válido</h1>
+        <p class="form-message form-error" role="alert">{{ mensaje }}</p>
+        <a class="btn-yellow" href="{{ url_for('auth.recuperar_contrasena') }}">Solicitar un enlace nuevo</a>
     {% else %}
         <h1>Crear contraseña nueva</h1>
         <p>Elige una contraseña de al menos 8 caracteres, con letras y números.</p>

@@ -32,10 +32,19 @@
             </p>
         </div>
 
-        <a href="{{ url_for('auth.recuperar_contrasena') }}" class="btn-continuar-sm">
-            Cambiar contraseña
-        </a>
+        <form method="POST" action="{{ url_for('auth.cambiar_contrasena') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-continuar-sm">Enviarme el enlace</button>
+        </form>
     </div>
+    <p class="settings-help">Te enviaremos un enlace seguro a {{ usuario['email'] }} para que elijas tu contraseña nueva.</p>
+    {% if feedback %}
+        <p class="form-message {{ 'form-success' if feedback.ok else 'form-error' }}" role="status">{{ feedback.mensaje }}</p>
+        {% if feedback.reset_link %}
+            <p class="reset-dev-note">Modo desarrollo: el correo no se envió, pero puedes continuar con este enlace de prueba.</p>
+            <a class="reset-dev-link" href="{{ feedback.reset_link }}">Continuar con el cambio</a>
+        {% endif %}
+    {% endif %}
 </div>
 </section>
 {% endblock %}

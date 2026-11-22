@@ -1,12 +1,11 @@
-import smtplib
-from email.message import EmailMessage
-
 from fastapi import APIRouter, Request
+from starlette.concurrency import run_in_threadpool
 
 from repositories.progress_repository import ProgressRepository
 from security import csrf_protected
-from services.auth_service import AuthService
-from views.responses import redirect, render_template
+from services.auth_service import EMAIL_PATTERN, AuthService
+from services.email_service import EmailService, password_email
+from views.responses import public_url, redirect, render_template
 
 
 auth_router = APIRouter(dependencies=csrf_protected)
@@ -66,6 +65,48 @@ async def login(request: Request):
 
 
 
+RECOVERY_GENERIC_MESSAGE = (
+    "Si el correo está registrado en Nivora, te enviamos un enlace para crear "
+    "una contraseña nueva. Revisa tu bandeja de entrada y la carpeta de spam."
+)
+EMAIL_NOT_CONFIGURED_MESSAGE = (
+    "El envío de correos no está configurado en este servidor, así que no "
+    "pudimos enviarte el enlace. Avisa al administrador de Nivora."
+)
+EMAIL_FAILED_MESSAGE = (
+    "No pudimos enviar el correo en este momento. Inténtalo de nuevo en unos "
+    "minutos."
+)
+
+
+async def _send_password_link(request: Request, email: str, name: str, change: bool):
+    """Create a reset token and e-mail the link.
+
+    Returns ``(status, dev_link)`` where ``status`` is ``"sent"``,
+    ``"unknown_user"``, ``"not_configured"`` or ``"failed"``. ``dev_link`` is
+    only filled in debug/testing mode when the e-mail could not be sent, so
+    the flow can still be tested locally without SMTP.
+    """
+    config = request.app.state.settings
+    mailer = EmailService(config)
+    token = auth_service.create_password_reset(email, config.PASSWORD_RESET_TOKEN_TTL)
+    if not token:
+        return "unknown_user", None
+
+    link = public_url(
+        request, request.url_for("auth.restablecer_contrasena", token=token)
+    )
+    subject, text, html = password_email(
+        name, link, config.PASSWORD_RESET_TOKEN_TTL, change
+    )
+    result = await run_in_threadpool(mailer.send, email, subject, text, html)
+    if result.sent:
+        return "sent", None
+    dev_link = link if (request.app.debug or request.app.state.testing) else None
+    status = "not_configured" if result.error == "not_configured" else "failed"
+    return status, dev_link
+
+
 @auth_router.api_route(
     "/recuperar-contrasena",
     methods=["GET", "POST"],
@@ -78,64 +119,66 @@ async def recuperar_contrasena(request: Request):
 
     form = await request.form()
     email = str(form.get("email", "")).strip().lower()
-    config = request.app.state.settings
-    token = auth_service.create_password_reset(
-        email, config.PASSWORD_RESET_TOKEN_TTL
-    )
-    reset_link = None
-    message = (
-        "Si el correo está registrado, recibirás instrucciones para recuperar tu cuenta."
-    )
-
-    if token:
-        reset_url = request.url_for("auth.restablecer_contrasena", token=token)
-        public_base_url = config.PUBLIC_BASE_URL
-        link = (
-            f"{public_base_url.rstrip('/')}{reset_url.path}"
-            if public_base_url
-            else str(reset_url)
+    if not EMAIL_PATTERN.fullmatch(email):
+        return render_template(
+            request,
+            "recuperar_contrasena.html",
+            status_code=400,
+            email=email,
+            field_errors={"email": "Introduce un correo electrónico válido"},
         )
-        smtp_host = config.SMTP_HOST
-        if smtp_host:
-            email_message = EmailMessage()
-            email_message["Subject"] = "Recupera tu contraseña de Nivora"
-            email_message["From"] = config.SMTP_FROM
-            email_message["To"] = email
-            email_message.set_content(
-                "Usa este enlace para cambiar tu contraseña. "
-                f"Es válido durante una hora:\n\n{link}"
-            )
-            try:
-                with smtplib.SMTP(
-                    smtp_host, config.SMTP_PORT, timeout=10
-                ) as smtp:
-                    if config.SMTP_USE_TLS:
-                        smtp.starttls()
-                    if config.SMTP_USERNAME:
-                        smtp.login(
-                            config.SMTP_USERNAME,
-                            config.SMTP_PASSWORD or "",
-                        )
-                    smtp.send_message(email_message)
-            except (OSError, smtplib.SMTPException):
-                request.app.state.logger.exception(
-                    "No se pudo enviar el correo de recuperación"
-                )
-                if request.app.debug or request.app.state.testing:
-                    reset_link = link
-        elif request.app.debug or request.app.state.testing:
-            reset_link = link
-        else:
-            request.app.state.logger.error(
-                "Configura NIVORA_SMTP_HOST para habilitar recuperación por correo"
-            )
 
+    status, dev_link = await _send_password_link(request, email, "", change=False)
+    # A missing account gets the same answer as a sent e-mail, so the form
+    # cannot be used to discover which addresses are registered.
+    if status in {"sent", "unknown_user"}:
+        message, ok = RECOVERY_GENERIC_MESSAGE, True
+    elif status == "not_configured":
+        message, ok = EMAIL_NOT_CONFIGURED_MESSAGE, False
+    else:
+        message, ok = EMAIL_FAILED_MESSAGE, False
     return render_template(
         request,
         "recuperar_contrasena.html",
+        status_code=200 if ok else 503,
+        email=email,
         mensaje=message,
-        reset_link=reset_link,
+        mensaje_ok=ok,
+        reset_link=dev_link,
     )
+
+
+@auth_router.post("/ajustes/cambiar-contrasena", name="auth.cambiar_contrasena")
+async def cambiar_contrasena(request: Request):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return redirect(request.url_for("auth.login"))
+
+    email = usuario.get("email", "")
+    status, dev_link = await _send_password_link(
+        request, email, usuario.get("nombre", ""), change=True
+    )
+    if status == "sent":
+        message, ok = (
+            f"Te enviamos un correo a {email} con el enlace para cambiar tu "
+            "contraseña. Revisa también la carpeta de spam.",
+            True,
+        )
+    elif status == "unknown_user":
+        message, ok = (
+            "No encontramos tu cuenta. Cierra sesión y vuelve a iniciarla.",
+            False,
+        )
+    elif status == "not_configured":
+        message, ok = EMAIL_NOT_CONFIGURED_MESSAGE, False
+    else:
+        message, ok = EMAIL_FAILED_MESSAGE, False
+    request.session["password_change_feedback"] = {
+        "mensaje": message,
+        "ok": ok,
+        "reset_link": dev_link,
+    }
+    return redirect(request.url_for("auth.ajustes"), status_code=303)
 
 
 @auth_router.api_route(
@@ -174,9 +217,8 @@ async def restablecer_contrasena(request: Request, token: str):
                 request,
                 "restablecer_contrasena.html",
                 status_code=400,
-                token=token,
+                enlace_invalido=True,
                 mensaje="El enlace venció o ya fue utilizado. Solicita uno nuevo.",
-                field_errors={},
             )
         return render_template(
             request,
@@ -185,6 +227,14 @@ async def restablecer_contrasena(request: Request, token: str):
             completado=True,
         )
 
+    if not auth_service.reset_token_is_valid(token):
+        return render_template(
+            request,
+            "restablecer_contrasena.html",
+            status_code=400,
+            enlace_invalido=True,
+            mensaje="El enlace venció o ya fue utilizado. Solicita uno nuevo.",
+        )
     return render_template(
         request,
         "restablecer_contrasena.html",
@@ -304,4 +354,5 @@ async def ajustes(request: Request):
         request,
         "ajustes.html",
         usuario=request.session["usuario"],
+        feedback=request.session.pop("password_change_feedback", None),
     )

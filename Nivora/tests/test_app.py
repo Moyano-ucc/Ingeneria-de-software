@@ -268,6 +268,10 @@ def test_password_recovery_routes_offer_and_accept_a_dev_reset_link(monkeypatch)
             return token == "demo-token" and password == "new-password-123"
 
         @staticmethod
+        def reset_token_is_valid(token):
+            return token == "demo-token"
+
+        @staticmethod
         def password_is_strong(password):
             return (
                 len(password) >= 8
@@ -290,7 +294,11 @@ def test_password_recovery_routes_offer_and_accept_a_dev_reset_link(monkeypatch)
         "/recuperar-contrasena",
         data={"csrf_token": csrf, "email": "ana@example.com"},
     )
-    assert recovery.status_code == 200
+    # Without SMTP the page must not claim the e-mail was sent; in testing
+    # mode it offers the development link instead.
+    assert recovery.status_code == 503
+    assert "no está configurado" in recovery.text
+    assert "te enviamos un enlace" not in recovery.text
     assert (
         b"http://127.0.0.1:8000/restablecer-contrasena/demo-token"
         in recovery.content
@@ -321,7 +329,7 @@ def test_profile_change_password_opens_recovery_with_account_email():
     recovery = client.get("/recuperar-contrasena")
 
     assert profile.status_code == 200
-    assert b'href="/recuperar-contrasena"' in profile.content
+    assert b'action="/ajustes/cambiar-contrasena"' in profile.content
     assert recovery.status_code == 200
     assert b'value="ana@example.com"' in recovery.content
 

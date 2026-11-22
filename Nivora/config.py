@@ -19,8 +19,9 @@ class Config:
     SMTP_PORT = int(os.environ.get("NIVORA_SMTP_PORT", "587"))
     SMTP_USERNAME = os.environ.get("NIVORA_SMTP_USERNAME")
     SMTP_PASSWORD = os.environ.get("NIVORA_SMTP_PASSWORD")
-    SMTP_FROM = os.environ.get("NIVORA_SMTP_FROM", "Nivora <noreply@localhost>")
+    SMTP_FROM = os.environ.get("NIVORA_SMTP_FROM")
     SMTP_USE_TLS = os.environ.get("NIVORA_SMTP_USE_TLS", "1") == "1"
+    SMTP_USE_SSL = os.environ.get("NIVORA_SMTP_USE_SSL", "0") == "1"
     PASSWORD_RESET_TOKEN_TTL = int(os.environ.get("NIVORA_PASSWORD_RESET_TTL", "3600"))
     PUBLIC_BASE_URL = os.environ.get("NIVORA_PUBLIC_URL")
 

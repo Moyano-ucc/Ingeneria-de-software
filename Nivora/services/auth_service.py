@@ -114,17 +114,24 @@ class AuthService:
             return None
 
         token = secrets.token_urlsafe(32)
-        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        token_hash = self._hash_token(token)
         self.users.create_password_reset(
             user["id_persona"], token_hash,
             time.time() + (self.reset_token_ttl if ttl is None else ttl),
         )
         return token
 
+    @staticmethod
+    def _hash_token(token):
+        return hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+
+    def reset_token_is_valid(self, token):
+        return self.users.reset_token_is_valid(self._hash_token(token), time.time())
+
     def reset_password(self, token, password):
         if not self.password_is_strong(password):
             return False
-        token_hash = hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+        token_hash = self._hash_token(token)
         return self.users.update_password_with_reset(
             token_hash, generate_password_hash(password), time.time()
         )

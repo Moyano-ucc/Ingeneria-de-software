@@ -8,13 +8,14 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="email">Correo electrónico</label>
-            <input id="email" type="email" name="email" value="{{ email|default('') }}" autocomplete="email" required>
+            <input id="email" type="email" name="email" value="{{ email|default('') }}" autocomplete="email" required aria-invalid="{{ 'true' if field_errors and field_errors.email else 'false' }}" aria-describedby="email-error">
+            <small id="email-error" class="field-error" role="alert" {% if not (field_errors and field_errors.email) %}hidden{% endif %}>{{ field_errors.email if field_errors else '' }}</small>
         </div>
         <button class="btn-yellow" type="submit">Enviar enlace</button>
     </form>
-    {% if mensaje %}<p class="form-message form-success">{{ mensaje }}</p>{% endif %}
+    {% if mensaje %}<p class="form-message {{ 'form-success' if mensaje_ok else 'form-error' }}" role="status">{{ mensaje }}</p>{% endif %}
     {% if reset_link %}
-        <p class="reset-dev-note">Enlace de prueba para desarrollo:</p>
+        <p class="reset-dev-note">Modo desarrollo: el correo no se envió, pero puedes continuar con este enlace de prueba.</p>
         <a class="reset-dev-link" href="{{ reset_link }}">Continuar con la recuperación</a>
     {% endif %}
     <div class="auth-links"><a href="{{ url_for('auth.login') }}">Volver a iniciar sesión</a></div>

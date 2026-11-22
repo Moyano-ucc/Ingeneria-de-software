@@ -61,6 +61,20 @@ class UserRepository:
         finally:
             connection.close()
 
+    def reset_token_is_valid(self, token_hash, now):
+        connection = self.database.connect()
+        try:
+            row = connection.execute(
+                """
+                SELECT 1 FROM PASSWORD_RESET
+                WHERE token_hash = ? AND expires_at > ? AND used_at IS NULL
+                """,
+                (token_hash, now),
+            ).fetchone()
+            return row is not None
+        finally:
+            connection.close()
+
     def update_password_with_reset(self, token_hash, password_hash, now):
         connection = self.database.connect()
         try:
