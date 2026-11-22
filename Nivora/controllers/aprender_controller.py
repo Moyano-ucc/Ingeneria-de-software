@@ -13,6 +13,16 @@ aprender_router = APIRouter(dependencies=csrf_protected)
 progress_repository = ProgressRepository()
 
 
+def _normalize_activities(actividades):
+    """Older sessions stored booleans; templates expect dictionaries."""
+    return {
+        lesson_id: (
+            activity if isinstance(activity, dict) else {"completada": bool(activity)}
+        )
+        for lesson_id, activity in actividades.items()
+    }
+
+
 @aprender_router.get("/aprender", name="aprender.mostrar_aprender")
 async def mostrar_aprender(request: Request):
     if "usuario" not in request.session:
@@ -46,14 +56,7 @@ async def ruta(request: Request, route_id: str):
             for lesson in RutaModel.obtener_lecciones()
             if lesson["unit_id"] == 2
         ]
-        normalized_activities = {
-            lesson_id: (
-                activity
-                if isinstance(activity, dict)
-                else {"completada": bool(activity)}
-            )
-            for lesson_id, activity in actividades.items()
-        }
+        normalized_activities = _normalize_activities(actividades)
         if request.method == "POST":
             form = await request.form()
             try:
@@ -134,14 +137,7 @@ async def ruta(request: Request, route_id: str):
     if ruta_actual is None or not ruta_actual["desbloqueada"]:
         return redirect(request.url_for("aprender.mostrar_aprender"))
 
-    normalized_activities = {
-        lesson_id: (
-            activity
-            if isinstance(activity, dict)
-            else {"completada": bool(activity)}
-        )
-        for lesson_id, activity in actividades.items()
-    }
+    normalized_activities = _normalize_activities(actividades)
     return render_template(
         request,
         "ruta.html",

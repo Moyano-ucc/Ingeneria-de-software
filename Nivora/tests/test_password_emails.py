@@ -9,6 +9,7 @@ from app import create_app
 from config import TestingConfig
 from services import email_service
 from services.email_service import EmailService
+from tests.conftest import csrf_from_page
 from tests.test_app import test_client
 
 
@@ -52,16 +53,10 @@ class FakeSMTP:
 
 
 @pytest.fixture(autouse=True)
-def isolate(tmp_path, monkeypatch):
-    monkeypatch.setenv("NIVORA_DATABASE_PATH", str(tmp_path / "nivora.db"))
+def fake_smtp(monkeypatch):
     FakeSMTP.sent, FakeSMTP.logins, FakeSMTP.fail_login = [], [], False
     monkeypatch.setattr(email_service.smtplib, "SMTP", FakeSMTP)
     monkeypatch.setattr(email_service.smtplib, "SMTP_SSL", FakeSMTP)
-
-
-def _csrf(client):
-    html = client.get("/recuperar-contrasena").text
-    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
 
 
 def _register(client, email="ana@example.com", password="clave-segura-1"):
@@ -69,7 +64,7 @@ def _register(client, email="ana@example.com", password="clave-segura-1"):
     client.post(
         "/registro",
         data={
-            "csrf_token": _csrf(client),
+            "csrf_token": csrf_from_page(client),
             "nombre": "Ana",
             "email": email,
             "password": password,
@@ -86,11 +81,11 @@ def _link_from_last_email():
 def test_recovery_sends_a_real_email_and_the_link_resets_the_password():
     client = test_client(create_app(SmtpConfig))
     _register(client)
-    client.post("/logout", data={"csrf_token": _csrf(client)})
+    client.post("/logout", data={"csrf_token": csrf_from_page(client)})
     client.headers.update({"x-forwarded-host": "nivora-8000.app.github.dev", "x-forwarded-proto": "https"})
 
     response = client.post(
-        "/recuperar-contrasena", data={"csrf_token": _csrf(client), "email": "ANA@example.com"}
+        "/recuperar-contrasena", data={"csrf_token": csrf_from_page(client), "email": "ANA@example.com"}
     )
 
     assert response.status_code == 200
@@ -108,13 +103,13 @@ def test_recovery_sends_a_real_email_and_the_link_resets_the_password():
     assert "Crear contraseña nueva" in client.get(path).text
     reset = client.post(
         path,
-        data={"csrf_token": _csrf(client), "password": "otra-clave-2", "confirmacion": "otra-clave-2"},
+        data={"csrf_token": csrf_from_page(client), "password": "otra-clave-2", "confirmacion": "otra-clave-2"},
     )
     assert "Contraseña actualizada" in reset.text
 
     login = client.post(
         "/login",
-        data={"csrf_token": _csrf(client), "email": "ana@example.com", "password": "otra-clave-2"},
+        data={"csrf_token": csrf_from_page(client), "email": "ana@example.com", "password": "otra-clave-2"},
     )
     assert login.headers["Location"] == "/aprender"
 
@@ -127,7 +122,7 @@ def test_unknown_email_gets_the_same_answer_without_sending_anything():
     client = test_client(create_app(SmtpConfig))
 
     response = client.post(
-        "/recuperar-contrasena", data={"csrf_token": _csrf(client), "email": "nadie@example.com"}
+        "/recuperar-contrasena", data={"csrf_token": csrf_from_page(client), "email": "nadie@example.com"}
     )
 
     assert response.status_code == 200
@@ -141,7 +136,7 @@ def test_smtp_failure_is_reported_honestly():
     FakeSMTP.fail_login = True
 
     response = client.post(
-        "/recuperar-contrasena", data={"csrf_token": _csrf(client), "email": "ana@example.com"}
+        "/recuperar-contrasena", data={"csrf_token": csrf_from_page(client), "email": "ana@example.com"}
     )
 
     assert response.status_code == 503
@@ -153,7 +148,7 @@ def test_invalid_email_is_rejected_inline():
     client = test_client(create_app(SmtpConfig))
 
     response = client.post(
-        "/recuperar-contrasena", data={"csrf_token": _csrf(client), "email": "no-es-correo"}
+        "/recuperar-contrasena", data={"csrf_token": csrf_from_page(client), "email": "no-es-correo"}
     )
 
     assert response.status_code == 400
@@ -164,7 +159,7 @@ def test_change_password_from_settings_emails_the_account_owner():
     client = test_client(create_app(SmtpConfig))
     _register(client)
 
-    response = client.post("/ajustes/cambiar-contrasena", data={"csrf_token": _csrf(client)})
+    response = client.post("/ajustes/cambiar-contrasena", data={"csrf_token": csrf_from_page(client)})
     assert response.status_code == 303
     assert response.headers["Location"] == "/ajustes"
     settings = client.get("/ajustes").text
@@ -182,7 +177,7 @@ def test_change_password_without_smtp_explains_the_problem():
 
     client = test_client(create_app(NoSmtp))
     _register(client)
-    client.post("/ajustes/cambiar-contrasena", data={"csrf_token": _csrf(client)})
+    client.post("/ajustes/cambiar-contrasena", data={"csrf_token": csrf_from_page(client)})
     settings = client.get("/ajustes").text
 
     assert "no está configurado" in settings
@@ -192,7 +187,7 @@ def test_change_password_without_smtp_explains_the_problem():
 
 def test_change_password_requires_login():
     client = test_client()
-    response = client.post("/ajustes/cambiar-contrasena", data={"csrf_token": _csrf(client)})
+    response = client.post("/ajustes/cambiar-contrasena", data={"csrf_token": csrf_from_page(client)})
     assert response.headers["Location"] == "/login"
 
 

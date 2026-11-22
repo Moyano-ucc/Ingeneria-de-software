@@ -82,11 +82,6 @@ def test_recommendation_uses_quiz_score():
     assert advanced["leccion"] == "variables"
 
 
-def test_lesson_requires_two_correct_answers():
-    assert AuthService.grade_lesson(["nombre", "int", "wrong"]) == (2, 3)
-    assert AuthService.grade_lesson(["wrong", "wrong", "wrong"]) == (0, 3)
-
-
 def test_password_reset_is_single_use_and_persists_in_fresh_sqlite(tmp_path):
     database = DatabaseConnection(config={"database_path": str(tmp_path / "nivora.db")})
     users = UserRepository(database)

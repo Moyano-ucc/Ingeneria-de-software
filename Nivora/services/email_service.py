@@ -55,9 +55,6 @@ class EmailService:
             missing.append("NIVORA_SMTP_FROM")
         return missing
 
-    def is_configured(self) -> bool:
-        return not self.missing_settings()
-
     def send(self, to: str, subject: str, text: str, html: str | None = None) -> EmailResult:
         missing = self.missing_settings()
         if missing:

@@ -78,15 +78,6 @@ class AuthService:
             "leccion": "variables",
         }
 
-    @staticmethod
-    def grade_lesson(answers):
-        correct_answers = ["nombre", "int", "True"]
-        score = sum(
-            answer == correct
-            for answer, correct in zip(answers, correct_answers)
-        )
-        return score, len(correct_answers)
-
     def authenticate(self, email, password):
         user = self.users.find_by_email((email or "").strip().lower())
         if not user:

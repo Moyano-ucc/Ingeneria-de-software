@@ -4,7 +4,6 @@ import json
 
 from fastapi.testclient import TestClient
 from itsdangerous import TimestampSigner
-import pytest
 
 from app import create_app
 from config import TestingConfig
@@ -43,11 +42,6 @@ def test_client(app=None):
 
 
 test_client.__test__ = False
-
-
-@pytest.fixture(autouse=True)
-def isolate_database(tmp_path, monkeypatch):
-    monkeypatch.setenv("NIVORA_DATABASE_PATH", str(tmp_path / "nivora.db"))
 
 
 def test_health_endpoint():

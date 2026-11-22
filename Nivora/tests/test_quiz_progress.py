@@ -1,10 +1,9 @@
 """Quiz answers persistence, quiz repetition and lesson review (E02, M02, M05)."""
 
-import re
 
-import pytest
 
 from database.database import DatabaseConnection
+from tests.conftest import csrf_from_page
 from tests.test_app import test_client
 
 
@@ -12,35 +11,25 @@ CORRECT = {"respuesta_1": "nombre", "respuesta_2": "int", "respuesta_3": "True"}
 WRONG = {"respuesta_1": "Ana", "respuesta_2": "str", "respuesta_3": "10"}
 
 
-@pytest.fixture(autouse=True)
-def isolate_database(tmp_path, monkeypatch):
-    monkeypatch.setenv("NIVORA_DATABASE_PATH", str(tmp_path / "nivora.db"))
-
-
-def _csrf(client):
-    html = client.get("/recuperar-contrasena").text
-    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
-
-
 def _register_and_login(client, email="ana@example.com"):
     client.get("/registro")
     client.post(
         "/registro",
         data={
-            "csrf_token": _csrf(client),
+            "csrf_token": csrf_from_page(client),
             "nombre": "Ana",
             "email": email,
             "password": "clave-segura-1",
             "confirmacion": "clave-segura-1",
         },
     )
-    client.post("/nivel", data={"csrf_token": _csrf(client), "nivel_inicial": "no_se_nada"})
+    client.post("/nivel", data={"csrf_token": csrf_from_page(client), "nivel_inicial": "no_se_nada"})
 
 
 def _submit(client, lesson_id, answers):
     return client.post(
         f"/aprender/leccion/{lesson_id}/completar",
-        data={"csrf_token": _csrf(client), **answers},
+        data={"csrf_token": csrf_from_page(client), **answers},
     )
 
 
@@ -75,12 +64,12 @@ def test_answers_survive_a_new_session_because_they_are_stored_in_the_database()
     client = test_client()
     _register_and_login(client)
     _submit(client, "variables", WRONG)
-    client.post("/logout", data={"csrf_token": _csrf(client)})
+    client.post("/logout", data={"csrf_token": csrf_from_page(client)})
 
     client.get("/login")
     client.post(
         "/login",
-        data={"csrf_token": _csrf(client), "email": "ana@example.com", "password": "clave-segura-1"},
+        data={"csrf_token": csrf_from_page(client), "email": "ana@example.com", "password": "clave-segura-1"},
     )
     lesson = client.get("/aprender/leccion/variables").text
 

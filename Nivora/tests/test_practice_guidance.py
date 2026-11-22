@@ -18,11 +18,6 @@ from tests.test_app import test_client
 EXERCISES = {exercise["id"]: exercise for exercise in EJERCICIOS}
 
 
-@pytest.fixture(autouse=True)
-def isolate_database(tmp_path, monkeypatch):
-    monkeypatch.setenv("NIVORA_DATABASE_PATH", str(tmp_path / "nivora.db"))
-
-
 def _run(code, inputs=()):
     values = iter(inputs)
     output = io.StringIO()

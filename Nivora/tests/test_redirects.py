@@ -8,8 +8,8 @@ relative.
 
 import re
 
-import pytest
 
+from tests.conftest import csrf_from_page
 from tests.test_app import test_client
 
 
@@ -18,16 +18,6 @@ PROXY_HEADERS = {
     "x-forwarded-host": "nivora-8000.app.github.dev",
     "x-forwarded-proto": "https",
 }
-
-
-@pytest.fixture(autouse=True)
-def isolate_database(tmp_path, monkeypatch):
-    monkeypatch.setenv("NIVORA_DATABASE_PATH", str(tmp_path / "nivora.db"))
-
-
-def _csrf(client):
-    html = client.get("/recuperar-contrasena").text
-    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
 
 
 def _assert_relative(response, expected_path):
@@ -45,7 +35,7 @@ def test_full_flow_behind_proxy_never_redirects_to_localhost():
     registro = client.post(
         "/registro",
         data={
-            "csrf_token": _csrf(client),
+            "csrf_token": csrf_from_page(client),
             "nombre": "Ana",
             "email": "ana@example.com",
             "password": "clave-segura-1",
@@ -56,7 +46,7 @@ def test_full_flow_behind_proxy_never_redirects_to_localhost():
 
     nivel = client.post(
         "/nivel",
-        data={"csrf_token": _csrf(client), "nivel_inicial": "no_se_nada"},
+        data={"csrf_token": csrf_from_page(client), "nivel_inicial": "no_se_nada"},
     )
     _assert_relative(nivel, "/aprender")
     assert client.get("/aprender").status_code == 200
@@ -68,7 +58,7 @@ def test_full_flow_behind_proxy_never_redirects_to_localhost():
         quiz = client.post(
             f"/aprender/leccion/{lesson_id}/completar",
             data={
-                "csrf_token": _csrf(client),
+                "csrf_token": csrf_from_page(client),
                 **{f"respuesta_{i}": a for i, a in enumerate(answers, 1)},
             },
         )
@@ -77,18 +67,18 @@ def test_full_flow_behind_proxy_never_redirects_to_localhost():
 
     practice = client.post(
         "/practica",
-        data={"csrf_token": _csrf(client), "ejercicio": "variables", "codigo": "edad = 20"},
+        data={"csrf_token": csrf_from_page(client), "ejercicio": "variables", "codigo": "edad = 20"},
     )
     _assert_relative(practice, "/practica")
 
-    logout = client.post("/logout", data={"csrf_token": _csrf(client)})
+    logout = client.post("/logout", data={"csrf_token": csrf_from_page(client)})
     _assert_relative(logout, "/")
 
     client.get("/login")
     login = client.post(
         "/login",
         data={
-            "csrf_token": _csrf(client),
+            "csrf_token": csrf_from_page(client),
             "email": "ana@example.com",
             "password": "clave-segura-1",
         },
@@ -97,7 +87,7 @@ def test_full_flow_behind_proxy_never_redirects_to_localhost():
 
     failed_login = client.post(
         "/login",
-        data={"csrf_token": _csrf(client), "email": "x@example.com", "password": "nope-1234"},
+        data={"csrf_token": csrf_from_page(client), "email": "x@example.com", "password": "nope-1234"},
     )
     _assert_relative(failed_login, "/login")
 

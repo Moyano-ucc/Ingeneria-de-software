@@ -22,9 +22,15 @@ sesión inmediatamente usa el botón **Cerrar sesión** antes de cerrar el naveg
 
 El registro solicita confirmar la contraseña y exige al menos ocho caracteres
 con letras y números. Cada pregunta del quiz ofrece cuatro opciones en orden
-variable. Las prácticas de la primera unidad conservan el editor de código y
+variable. Las prácticas de la primera unidad (dificultad fácil) se resuelven con
+bloques que construyen el código, o escribiéndolo si el estudiante lo prefiere;
 las unidades siguientes combinan retos para ordenar bloques, completar código
-con fichas y emparejar conceptos.
+con fichas y emparejar conceptos. Cada reto muestra objetivo, pasos, pistas
+progresivas y una explicación del error sin revelar la solución.
+
+Las respuestas del último intento de cada quiz se guardan en la base de datos:
+se conservan al ir al reto práctico y volver. «Repetir quiz» inicia un intento
+nuevo y las lecciones completadas pueden repasarse sin perder el progreso.
 Las animaciones de la portada se activan al cargar, incluso si el sistema
 prefiere reducir el movimiento.
 
@@ -39,9 +45,14 @@ pytest -q
 - `app.py`: configura FastAPI, middleware, routers y archivos estáticos.
 - `api_routes.py`: endpoints REST documentados por OpenAPI/Swagger.
 - `controllers/`: rutas web agrupadas por funcionalidad.
-- `services/`, `models/` y `repositories/`: lógica, dominio y persistencia.
+- `services/`: lógica de negocio (`auth_service`, `email_service` para los
+  correos y `practica_service` para evaluar retos con retroalimentación).
+- `models/`: dominio y contenido (`ruta_model`, `progreso_model`,
+  `contenido_lecciones` con la teoría y `ejercicios_practica` con los retos).
+- `repositories/`: acceso a SQLite (usuarios, tokens y progreso).
 - `templates/` y `static/`: interfaz HTML, estilos, imágenes y JavaScript.
-- `tests/`: pruebas automatizadas.
+- `tests/`: pruebas automatizadas (`conftest.py` aísla la base de datos en
+  cada prueba).
 
 ## Producción
 
@@ -71,8 +82,9 @@ modelos y repositorios:
 - **Repository:** `UserRepository` y `ProgressRepository` aíslan el acceso SQLite.
 - **Service:** `AuthService` contiene registro, autenticación y recuperación.
 - **Facade:** `UsuarioModel` ofrece una interfaz simple sobre autenticación.
-- **Strategy:** `recommend_level()` y `grade_lesson()` seleccionan el comportamiento
-  de recomendación y evaluación según las respuestas recibidas.
+- **Strategy:** `recommend_level()` selecciona la recomendación según las
+  respuestas recibidas, y `services/practica_service.py` aplica una estrategia
+  de evaluación distinta para código y para cada tipo de rompecabezas.
 - **Template Method:** los controladores comparten el flujo de sesión, validación
   CSRF, evaluación y persistencia.
 
