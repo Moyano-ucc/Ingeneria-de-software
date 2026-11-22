@@ -82,6 +82,43 @@
     color: var(--text-sub);
 }
 
+/* Acompañamiento en los retos prácticos */
+.practice-guide {
+    background: #101827;
+    border: 1px solid #263954;
+    border-radius: 8px;
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+}
+
+.practice-goal { margin: 0 0 0.5rem; }
+.practice-steps { color: var(--text-sub); margin: 0; padding-left: 1.2rem; line-height: 1.6; }
+.practice-hints { margin: 0.8rem 0; }
+.practice-hint-more { color: var(--text-sub); margin: 0.4rem 0; }
+.practice-hint-more summary { color: #8ecae6; cursor: pointer; }
+.practice-hint-more p { margin: 0.3rem 0 0 1rem; }
+
+.practice-feedback {
+    border-radius: 8px;
+    margin: 1rem 0;
+    padding: 0.6rem 1rem;
+}
+
+.practice-feedback.is-correct { background: rgba(39, 103, 73, 0.18); border: 1px solid #276749; }
+.practice-feedback.is-wrong { background: rgba(155, 44, 44, 0.15); border: 1px solid #9b2c2c; }
+.practice-feedback ul { margin: 0.3rem 0; padding-left: 1.2rem; line-height: 1.6; }
+.practice-encourage { color: var(--text-sub); font-size: 0.9rem; }
+
+/* Bloques (dificultad fácil) */
+.practice-blocks { margin: 1rem 0 0.5rem; }
+.practice-blocks-help { color: var(--text-sub); font-size: 0.9rem; margin: 0 0 0.6rem; }
+.practice-token { font-family: Consolas, monospace; }
+.practice-blocks-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+.practice-blocks-actions .btn-secondary { cursor: pointer; font: inherit; padding: 0.45rem 0.8rem; }
+.practice-blocks-actions .btn-secondary:disabled { cursor: default; opacity: 0.45; }
+.practice-editor textarea.is-generated { border-style: dashed; cursor: default; }
+.practice-mode-toggle { background: none; border: 0; cursor: pointer; font: inherit; padding: 0; margin-bottom: 0.5rem; }
+
 .practice-puzzle { margin: 1.25rem 0; text-align: left; }
 .practice-puzzle h3 { margin: 1.1rem 0 0.55rem; color: #8ecae6; font-size: 0.95rem; }
 .practice-piece-bank,
@@ -898,6 +935,84 @@ nav a:hover,
     padding-top: 1rem;
 }
 
+/* Teoría ampliada de cada lección */
+.lesson-theory h3 {
+    color: var(--text-light);
+    font-size: 1.05rem;
+    margin: 1.6rem 0 0.6rem;
+}
+
+.theory-analogy {
+    background: rgba(43, 108, 176, 0.18);
+    border-left: 3px solid var(--blue-accent);
+    border-radius: 6px;
+    color: #e2e8f0;
+    line-height: 1.6;
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+}
+
+.theory-lines {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1.4rem;
+}
+
+.theory-lines li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.8rem;
+}
+
+.theory-lines span,
+.theory-note,
+.theory-error p {
+    color: var(--text-sub);
+}
+
+.lesson-page pre.theory-output {
+    border-color: #276749;
+}
+
+.theory-errors {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.theory-error {
+    background: var(--card-dark);
+    border: 1px solid #2b3e5d;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+}
+
+.lesson-page pre.code-wrong {
+    border-color: #9b2c2c;
+    margin: 0 0 0.5rem;
+}
+
+.theory-error p {
+    margin: 0.3rem 0;
+}
+
+.theory-error .theory-fix code {
+    white-space: pre-wrap;
+}
+
+.theory-reveal {
+    background: var(--card-dark);
+    border: 1px dashed #2b3e5d;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+}
+
+.theory-reveal summary {
+    color: var(--yellow-primary);
+    cursor: pointer;
+    font-weight: bold;
+}
+
 .lesson-back {
     margin-top: 2rem;
     width: auto;
@@ -1162,5 +1277,10 @@ nav a:hover,
 
 .lesson-incomplete {
     color: #fc8181;
+    font-weight: bold;
+}
+/* Respuesta elegida visible también cuando el quiz ya fue evaluado */
+.quiz-question label:has(input:checked) {
+    color: var(--yellow-primary);
     font-weight: bold;
 }

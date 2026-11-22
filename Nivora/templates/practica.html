@@ -34,6 +34,12 @@
         <input type="hidden" name="ejercicio" value="{{ ejercicio.id }}">
         <p class="eyebrow">{{ ejercicio.nivel }}</p>
         <h2>{{ ejercicio.pregunta }}</h2>
+        <div class="practice-guide">
+            <p class="practice-goal"><strong>Objetivo:</strong> {{ ejercicio.objetivo }}</p>
+            <ol class="practice-steps">
+                {% for paso in ejercicio.pasos %}<li>{{ paso }}</li>{% endfor %}
+            </ol>
+        </div>
         {% if ejercicio.tipo %}
             <section
                 class="practice-puzzle"
@@ -47,22 +53,61 @@
                 <p class="practice-puzzle-live" data-practice-live role="status" aria-live="polite"></p>
             </section>
         {% else %}
+            {% if ejercicio.bloques %}
+                <section class="practice-blocks" data-practice-blocks data-fichas='{{ ejercicio.bloques.fichas|tojson }}' data-mode="{{ resultado.modo if resultado and resultado.modo else 'bloques' }}" hidden>
+                    <p class="practice-blocks-help">Toca las fichas en orden para construir tu código. Pulsa «Nueva línea» para pasar a la siguiente línea.</p>
+                    <div class="practice-token-bank" data-blocks-bank></div>
+                    <div class="practice-blocks-actions">
+                        <button type="button" class="btn-secondary" data-blocks-newline>↵ Nueva línea</button>
+                        <button type="button" class="btn-secondary" data-blocks-undo>⌫ Quitar última ficha</button>
+                        <button type="button" class="btn-secondary" data-blocks-clear>Limpiar</button>
+                    </div>
+                </section>
+                <input type="hidden" name="modo" value="" data-blocks-mode-input>
+            {% endif %}
             <label for="codigo">Tu código</label>
-            <textarea id="codigo" name="codigo" rows="8" required>{{ resultado.codigo if resultado else '' }}</textarea>
+            <textarea id="codigo" name="codigo" rows="8" required spellcheck="false">{{ resultado.codigo if resultado else '' }}</textarea>
+            {% if ejercicio.bloques %}
+                <button type="button" class="text-link practice-mode-toggle" data-blocks-toggle hidden>Prefiero escribir el código</button>
+            {% endif %}
         {% endif %}
-        <p class="practice-hint">Pista: {{ ejercicio.pista }}</p>
-        {% if resultado %}
-            <p class="{{ 'answer-correct' if resultado.correcto else 'answer-wrong' }}" role="status">
-                {% if resultado.correcto %}
-                    {{ '¡Respuesta correcta!' if not ejercicio.tipo else '¡Reto completado! Las piezas están en su lugar.' }}
+
+        <div class="practice-hints">
+            {% for pista in ejercicio.pistas %}
+                {% if loop.first %}
+                    <p class="practice-hint">Pista: {{ pista }}</p>
                 {% else %}
-                    {{ 'Todavía no. Revisa la pista e inténtalo nuevamente.' if not ejercicio.tipo else 'Aún no está listo. Prueba otra combinación.' }}
+                    <details class="practice-hint-more" {% if loop.index <= pistas_visibles %}open{% endif %}>
+                        <summary>Ver pista {{ loop.index }}</summary>
+                        <p>{{ pista }}</p>
+                    </details>
                 {% endif %}
-            </p>
+            {% endfor %}
+        </div>
+
+        {% if resultado %}
+            <div class="practice-feedback {{ 'is-correct' if resultado.correcto else 'is-wrong' }}" role="status">
+                <p class="{{ 'answer-correct' if resultado.correcto else 'answer-wrong' }}">
+                    {% if resultado.correcto %}
+                        {{ '¡Respuesta correcta!' if not ejercicio.tipo else '¡Reto completado! Las piezas están en su lugar.' }}
+                    {% else %}
+                        {{ 'Todavía no. Revisa la pista e inténtalo nuevamente.' if not ejercicio.tipo else 'Aún no está listo. Prueba otra combinación.' }}
+                    {% endif %}
+                </p>
+                {% if resultado.retroalimentacion %}
+                    <ul>
+                        {% for mensaje in resultado.retroalimentacion %}<li>{{ mensaje }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+                {% if not resultado.correcto and intentos >= 2 %}
+                    <p class="practice-encourage">Llevas {{ intentos }} intentos. Abrimos una pista más para ayudarte; equivocarse es parte de aprender.</p>
+                {% endif %}
+            </div>
         {% endif %}
         <button type="submit" class="btn-yellow">{{ 'Comprobar reto' if ejercicio.tipo else 'Evaluar solución' }}</button>
     </form>
 </div>
 </div>
 <script src="{{ url_for('static', filename='js/practica.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/bloques.js') }}" defer></script>
 {% endblock %}
