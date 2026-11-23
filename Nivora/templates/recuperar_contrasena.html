@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="auth-card">
+    <h1>Recuperar contraseña</h1>
+    <p>Escribe el correo asociado a tu cuenta y te enviaremos un enlace para crear una contraseña nueva.</p>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" name="email" value="{{ email|default('') }}" autocomplete="email" required>
+        </div>
+        <button class="btn-yellow" type="submit">Enviar enlace</button>
+    </form>
+    {% if mensaje %}<p class="form-message form-success">{{ mensaje }}</p>{% endif %}
+    {% if reset_link %}
+        <p class="reset-dev-note">Enlace de prueba para desarrollo:</p>
+        <a class="reset-dev-link" href="{{ reset_link }}">Continuar con la recuperación</a>
+    {% endif %}
+    <div class="auth-links"><a href="{{ url_for('auth.login') }}">Volver a iniciar sesión</a></div>
+</section>
+{% endblock %}

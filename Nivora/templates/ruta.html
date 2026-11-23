@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="container route-page">
+    <p class="eyebrow">Unidad 01 · Fundamentos</p>
+    <h1>Fundamentos de Python</h1>
+    <p class="lesson-intro">Completa las lecciones en orden. Cada quiz aprobado desbloquea el siguiente.</p>
+
+    <div class="lesson-list">
+        {% for lesson in lecciones %}
+            {% set completed = actividades.get(lesson.id, {}).get('completada', False) %}
+            {% set attempted = actividades.get(lesson.id, {}).get('intentada', False) %}
+            {% set previous = lecciones[loop.index0 - 1] if loop.index0 > 0 else none %}
+            {% set unlocked = loop.first or actividades.get(previous.id, {}).get('completada', False) or actividades.get(previous.id, {}).get('intentada', False) %}
+            <div class="lesson-row {{ 'is-complete' if completed else '' }} {{ 'is-locked' if not unlocked else '' }}">
+                <span class="lesson-number">{{ '%02d'|format(lesson.numero) }}</span>
+                <div class="lesson-row-copy">
+                    <h2>{{ lesson.titulo }}</h2>
+                    <p>{{ lesson.descripcion }}</p>
+                </div>
+                {% if completed %}
+                    <span class="lesson-status">Completada</span>
+                {% elif unlocked %}
+                    <div class="lesson-actions">
+                        {% if attempted %}<span class="lesson-status lesson-incomplete">Incompleta</span>{% endif %}
+                        <a class="btn-continuar-sm" href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}">{% if attempted %}Repetir quiz{% else %}Comenzar lección{% endif %}</a>
+                    </div>
+                {% else %}
+                    <span class="lesson-status">Bloqueada</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <a href="{{ url_for('aprender.mostrar_aprender') }}" class="text-link">Volver a unidades</a>
+</section>
+{% endblock %}

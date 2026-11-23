@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<article class="lesson-page container">
+    <p class="eyebrow">Lección {{ '%02d'|format(lesson.numero) }} · Fundamentos</p>
+    <h1>{{ lesson.titulo }}</h1>
+    <p class="lesson-intro">{{ lesson.descripcion }}</p>
+
+    <section class="lesson-section">
+        <h2>Antes del quiz</h2>
+        {% if lesson.id == 'variables' %}
+            <p>Una variable guarda un valor. Python tiene tipos como <code>str</code>, <code>int</code>, <code>float</code> y <code>bool</code>.</p>
+            <pre><code>nombre = "Ana"
+edad = 20
+activo = True</code></pre>
+        {% elif lesson.id == 'operadores' %}
+            <p>Los operadores permiten calcular y comparar valores.</p>
+            <pre><code>suma = 3 + 4
+mayor = 5 &gt; 2</code></pre>
+        {% elif lesson.id == 'entrada_salida' %}
+            <p><code>print</code> muestra información y <code>input</code> recibe texto.</p>
+            <pre><code>nombre = input("Tu nombre: ")
+print(nombre)</code></pre>
+        {% else %}
+            <p>Las listas agrupan valores. Puedes consultar su tamaño y agregar elementos.</p>
+            <pre><code>frutas = ["manzana"]
+frutas.append("pera")</code></pre>
+        {% endif %}
+    </section>
+
+    <section class="lesson-exercise">
+        <h2>Quiz de la lección</h2>
+        <p>Necesitas responder correctamente las 3 preguntas para completarla.</p>
+        <form method="POST" action="{{ url_for('aprender.completar_leccion', lesson_id=lesson.id) }}" class="lesson-quiz">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% for question, options in lesson.questions %}
+                <div class="quiz-question">
+                    <p>{{ loop.index }}. {{ question }}</p>
+                    {% set question_number = loop.index %}
+                    {% for value, label in options %}
+                        <label><input type="radio" name="respuesta_{{ question_number }}" value="{{ value }}" required {% if resultado and resultado.answers[question_number - 1] == value %}checked{% endif %} {% if resultado %}disabled{% endif %}> {{ label }}</label>
+                    {% endfor %}
+                    {% if resultado and resultado.results[loop.index0] %}<span class="answer-result answer-correct">Correcta</span>{% elif resultado %}<span class="answer-result answer-wrong">Incorrecta</span>{% endif %}
+                </div>
+            {% endfor %}
+            {% if resultado %}<p class="quiz-score">Resultado: {{ resultado.score }}/{{ resultado.total }}</p>{% endif %}
+            {% if not resultado %}
+                <button type="submit" class="btn-yellow">Evaluar quiz</button>
+            {% else %}
+                <p class="quiz-score">Quiz evaluado{% if not resultado.completada %}. Pulsa “Repetir quiz” para intentarlo de nuevo.{% else %}: lección completada.{% endif %}</p>
+            {% endif %}
+        </form>
+    </section>
+
+    {% if resultado %}
+        <div class="quiz-actions">
+            {% if not resultado.completada %}
+                <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}" class="btn-secondary">Repetir quiz</a>
+            {% endif %}
+            {% if resultado.next_lesson %}
+                <a href="{{ url_for('aprender.leccion', lesson_id=resultado.next_lesson.id) }}" class="btn-yellow">Siguiente lección</a>
+            {% else %}
+                <a href="{{ url_for('aprender.ruta', route_id='01') }}" class="btn-yellow">Ver ruta completa</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</article>
+{% endblock %}
