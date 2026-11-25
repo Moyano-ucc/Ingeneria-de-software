@@ -2,32 +2,44 @@
     const form = document.querySelector('[data-registration-form] form');
     if (!form) return;
 
+    // Name and e-mail are checked here; the password and its confirmation
+    // are handled by password.js, shared with the password reset form.
     form.addEventListener('submit', function (event) {
-        const name = form.elements.nombre.value.trim();
-        const email = form.elements.email.value.trim();
-        const password = form.elements.password.value;
-
-        if (name.length < 2 || name.length > 30) {
+        const errors = validate();
+        ['nombre', 'email'].forEach((name) => setFieldError(name, errors[name] || ''));
+        if (Object.keys(errors).length) {
             event.preventDefault();
-            showNotice('El nombre debe tener entre 2 y 30 caracteres.');
-        } else if (!form.elements.email.validity.valid) {
-            event.preventDefault();
-            showNotice('Escribe un correo válido, por ejemplo: nombre@correo.com.');
-        } else if (password.length < 8) {
-            event.preventDefault();
-            showNotice('La contraseña debe tener al menos 8 caracteres.');
+            form.querySelector(`[name="${Object.keys(errors)[0]}"]`).focus();
         }
     });
 
-    function showNotice(message) {
-        let notice = document.querySelector('.floating-notice');
-        if (!notice) {
-            notice = document.createElement('div');
-            notice.className = 'floating-notice';
-            document.body.appendChild(notice);
+    form.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('input', () => {
+            const errors = validate();
+            if (input.name === 'nombre' || input.name === 'email') {
+                setFieldError(input.name, errors[input.name] || '');
+            }
+        });
+    });
+
+    function validate() {
+        const errors = {};
+        const name = form.elements.nombre.value.trim();
+        if (name.length < 2 || name.length > 30) {
+            errors.nombre = 'El nombre debe tener entre 2 y 30 caracteres.';
         }
-        notice.textContent = message;
-        notice.classList.add('is-visible');
-        window.setTimeout(() => notice.classList.remove('is-visible'), 3500);
+        if (!form.elements.email.validity.valid) {
+            errors.email = 'Escribe un correo válido, por ejemplo: nombre@correo.com.';
+        }
+        return errors;
+    }
+
+    function setFieldError(name, message) {
+        const input = form.elements[name];
+        const error = document.getElementById(`${name}-error`);
+        if (!input || !error) return;
+        error.textContent = message;
+        error.hidden = !message;
+        input.setAttribute('aria-invalid', String(Boolean(message)));
     }
 })();

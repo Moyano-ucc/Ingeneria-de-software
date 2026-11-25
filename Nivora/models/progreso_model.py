@@ -1,54 +1,36 @@
+from models.ruta_model import RutaModel
+
+
 class ProgresoModel:
+    """Overall and per-unit progress, derived from the lessons in the database.
+
+    Totals come from the real content, so adding or removing a lesson keeps
+    the percentages and the course completion consistent.
+    """
 
     @staticmethod
-    def obtener_progreso(usuario_id=None, actividades=None):
-        actividades = actividades or {}
-        unit_one_activities = {
-            key: value for key, value in actividades.items()
-            if key != "unidad_02_puzzle"
-        }
-        variables_completadas = sum(
-            int(data.get('completada', False) if isinstance(data, dict) else data)
-            for data in unit_one_activities.values()
-        )
-        unit_two_completed = int(
-            actividades.get("unidad_02_puzzle", {}).get("completada", False)
-            if isinstance(actividades.get("unidad_02_puzzle", {}), dict)
-            else bool(actividades.get("unidad_02_puzzle", False))
-        )
-        general_completadas = variables_completadas + unit_two_completed
+    def _percentage(completed, total):
+        return round(completed / total * 100) if total else 0
 
+    @classmethod
+    def obtener_progreso(cls, usuario_id=None, actividades=None):
+        rutas = RutaModel.obtener_rutas(actividades or {})
+        completadas = sum(ruta["completadas"] for ruta in rutas)
+        total = sum(ruta["total"] for ruta in rutas)
         return {
             "general": {
-                "completadas": general_completadas,
-                "total": 13,
-                "porcentaje": round(general_completadas / 13 * 100)
+                "completadas": completadas,
+                "total": total,
+                "porcentaje": cls._percentage(completadas, total),
             },
-
             "rutas": [
                 {
-                    "nombre": "Fundamentos de Python",
-                    "completadas": variables_completadas,
-                    "total": 4,
-                    "porcentaje": round(variables_completadas / 4 * 100)
-                },
-                {
-                    "nombre": "Control de flujo",
-                    "completadas": unit_two_completed,
-                    "total": 1,
-                    "porcentaje": unit_two_completed * 100
-                },
-                {
-                    "nombre": "Listas y estructuras",
-                    "completadas": 0,
-                    "total": 4,
-                    "porcentaje": 0
-                },
-                {
-                    "nombre": "Funciones",
-                    "completadas": 0,
-                    "total": 4,
-                    "porcentaje": 0
+                    "nombre": ruta["nombre"],
+                    "completadas": ruta["completadas"],
+                    "total": ruta["total"],
+                    "porcentaje": cls._percentage(ruta["completadas"], ruta["total"]),
                 }
-            ]
+                for ruta in rutas
+            ],
+            "curso_completado": total > 0 and completadas == total,
         }

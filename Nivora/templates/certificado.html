@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="container certificate-page">
+    {% if bloqueado %}
+        <div class="certificate-locked">
+            <p class="eyebrow">Certificado de Nivora</p>
+            <h1>Tu certificado te espera al final del camino</h1>
+            <p>Completa las {{ progreso.general.total }} lecciones del curso para obtenerlo. Llevas {{ progreso.general.completadas }}.</p>
+            <div class="progreso-barra">
+                <div class="progreso-barra-fill" style="width: {{ progreso.general.porcentaje }}%;"></div>
+            </div>
+            <a class="btn-yellow" href="{{ url_for('aprender.mostrar_aprender') }}">Seguir aprendiendo</a>
+        </div>
+    {% else %}
+        <div class="certificate-actions no-print">
+            <p>¡Felicidades, {{ nombre }}! Completaste el curso. Guarda tu certificado como PDF o imprímelo.</p>
+            <button type="button" class="btn-yellow" onclick="window.print()">Descargar PDF / imprimir</button>
+        </div>
+
+        <article class="certificate" aria-label="Certificado de finalización">
+            <div class="certificate-border">
+                <p class="certificate-brand">Nivora</p>
+                <p class="certificate-kicker">Certificado de finalización</p>
+                <p class="certificate-text">Se otorga a</p>
+                <h1 class="certificate-name">{{ nombre }}</h1>
+                <p class="certificate-text">por completar el curso</p>
+                <h2 class="certificate-course">Aprende Python con Nivora</h2>
+                <p class="certificate-detail">{{ lecciones }} lecciones con sus quizzes en {{ unidades|length }} unidades:</p>
+                <ul class="certificate-units">
+                    {% for unidad in unidades %}<li>{{ unidad }}</li>{% endfor %}
+                </ul>
+                <div class="certificate-footer">
+                    <div>
+                        <span class="certificate-line">{{ fecha }}</span>
+                        <small>Fecha de emisión</small>
+                    </div>
+                    <span class="certificate-seal" aria-hidden="true">&lt;/&gt;</span>
+                    <div>
+                        <span class="certificate-line">Equipo de Nivora</span>
+                        <small>Aprende, practica, construye</small>
+                    </div>
+                </div>
+                <p class="certificate-code">Código de verificación: <strong>{{ codigo }}</strong> · {{ url_verificacion }}</p>
+            </div>
+        </article>
+
+        <a href="{{ url_for('progreso.mostrar_progreso') }}" class="text-link no-print">Volver a mi progreso</a>
+    {% endif %}
+</section>
+{% endblock %}

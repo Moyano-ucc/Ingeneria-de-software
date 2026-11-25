@@ -1,19 +1,25 @@
-from flask import Blueprint, render_template, redirect, url_for, session
+from fastapi import APIRouter, Request
+
 from models.progreso_model import ProgresoModel
+from security import csrf_protected
+from views.responses import redirect, render_template
 
-progreso_bp = Blueprint('progreso', __name__)
 
-@progreso_bp.route('/progreso')
-def mostrar_progreso():
-    if 'usuario' not in session:
-        return redirect(url_for('auth.login'))
+progreso_router = APIRouter(dependencies=csrf_protected)
+
+
+@progreso_router.get("/progreso", name="progreso.mostrar_progreso")
+async def mostrar_progreso(request: Request):
+    if "usuario" not in request.session:
+        return redirect(request.url_for("auth.login"))
 
     progreso = ProgresoModel.obtener_progreso(
-        session['usuario'].get('id_persona'), session.get('progreso', {})
+        request.session["usuario"].get("id_persona"),
+        request.session.get("progreso", {}),
     )
-
     return render_template(
-        'progreso.html',
-        usuario=session['usuario'],
-        progreso=progreso
+        request,
+        "progreso.html",
+        usuario=request.session["usuario"],
+        progreso=progreso,
     )

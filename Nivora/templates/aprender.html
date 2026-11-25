@@ -46,7 +46,7 @@
         </span>
 
         {% if ruta.desbloqueada %}
-            <a href="{{ url_for('aprender.ruta', route_id=ruta.id) }}" class="btn-continuar-sm">{{ 'Resolver rompecabezas' if ruta.id == '02' else 'Ver unidad' }}</a>
+            <a href="{{ url_for('aprender.ruta', route_id=ruta.id) }}" class="btn-continuar-sm">Ver unidad</a>
         {% else %}
             <span class="route-locked">{{ 'Completa la Unidad 1 para desbloquear' if ruta.id == '02' else 'Bloqueada' }}</span>
         {% endif %}

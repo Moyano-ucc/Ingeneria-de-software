@@ -1,184 +1,396 @@
-import smtplib
-from email.message import EmailMessage
+import time
 
-from flask import Blueprint, current_app, render_template, request, redirect, url_for, session
+from fastapi import APIRouter, Request
+from starlette.concurrency import run_in_threadpool
+
 from repositories.progress_repository import ProgressRepository
-from services.auth_service import AuthService
+from security import csrf_protected
+from services.auth_service import EMAIL_PATTERN, AuthService
+from services.email_service import EmailService, reset_code_email
+from views.responses import redirect, render_template
 
-auth_bp = Blueprint('auth', __name__)
+
+auth_router = APIRouter(dependencies=csrf_protected)
 auth_service = AuthService()
 progress_repository = ProgressRepository()
+FORM_FEEDBACK_KEY = "form_feedback"
 
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email', '')
-        password = request.form.get('password', '')
+def _consume_field_errors(request: Request, form_name: str) -> dict:
+    feedback = request.session.pop(FORM_FEEDBACK_KEY, None)
+    if not isinstance(feedback, dict) or feedback.get("form") != form_name:
+        return {}
+    fields = feedback.get("fields", {})
+    return fields if isinstance(fields, dict) else {}
 
+
+def _redirect_with_field_errors(request: Request, form_name: str, fields: dict):
+    request.session[FORM_FEEDBACK_KEY] = {"form": form_name, "fields": fields}
+    route_name = "auth.login" if form_name == "login" else "auth.registro"
+    return redirect(request.url_for(route_name), status_code=303)
+
+
+@auth_router.api_route("/login", methods=["GET", "POST"], name="auth.login")
+async def login(request: Request):
+    if request.method == "GET":
+        if "usuario" in request.session:
+            return redirect(request.url_for("aprender.mostrar_aprender"))
+        return render_template(
+            request,
+            "login.html",
+            field_errors=_consume_field_errors(request, "login"),
+        )
+
+    if request.method == "POST":
+        form = await request.form()
+        email = form.get("email", "")
+        password = form.get("password", "")
         usuario = auth_service.authenticate(email, password)
 
         if usuario:
-            session.clear()
-            session['usuario'] = usuario
-            session['progreso'] = progress_repository.find_by_user(usuario['id_persona'])
-            return redirect(url_for('aprender.mostrar_aprender'))
-
-        return render_template(
-            'login.html',
-            mensaje='Correo o contraseña incorrectos'
-        )
-
-    return render_template('login.html')
-
-
-@auth_bp.route('/recuperar-contrasena', methods=['GET', 'POST'])
-def recuperar_contrasena():
-    if request.method == 'GET':
-        email = session.get('usuario', {}).get('email', '')
-        return render_template('recuperar_contrasena.html', email=email)
-
-    email = request.form.get('email', '').strip().lower()
-    token = auth_service.create_password_reset(
-        email, current_app.config['PASSWORD_RESET_TOKEN_TTL']
-    )
-    reset_link = None
-    message = 'Si el correo está registrado, recibirás instrucciones para recuperar tu cuenta.'
-
-    if token:
-        reset_path = url_for('auth.restablecer_contrasena', token=token)
-        public_base_url = current_app.config.get('PUBLIC_BASE_URL')
-        link = (
-            f"{public_base_url.rstrip('/')}{reset_path}"
-            if public_base_url
-            else url_for('auth.restablecer_contrasena', token=token, _external=True)
-        )
-        smtp_host = current_app.config.get('SMTP_HOST')
-        if smtp_host:
-            email_message = EmailMessage()
-            email_message['Subject'] = 'Recupera tu contraseña de Nivora'
-            email_message['From'] = current_app.config['SMTP_FROM']
-            email_message['To'] = email
-            email_message.set_content(
-                f'Usa este enlace para cambiar tu contraseña. Es válido durante una hora:\n\n{link}'
+            request.session.clear()
+            request.session["usuario"] = usuario
+            request.session["progreso"] = progress_repository.find_by_user(
+                usuario["id_persona"]
             )
-            try:
-                with smtplib.SMTP(
-                    smtp_host, current_app.config['SMTP_PORT'], timeout=10
-                ) as smtp:
-                    if current_app.config['SMTP_USE_TLS']:
-                        smtp.starttls()
-                    username = current_app.config.get('SMTP_USERNAME')
-                    if username:
-                        smtp.login(username, current_app.config.get('SMTP_PASSWORD', ''))
-                    smtp.send_message(email_message)
-            except (OSError, smtplib.SMTPException):
-                current_app.logger.exception('No se pudo enviar el correo de recuperación')
-                if current_app.debug or current_app.testing:
-                    reset_link = link
-        elif current_app.debug or current_app.testing:
-            reset_link = link
-        else:
-            current_app.logger.error('Configura NIVORA_SMTP_HOST para habilitar recuperación por correo')
+            return redirect(
+                request.url_for("aprender.mostrar_aprender"),
+                status_code=303,
+            )
 
+        message = "Correo o contraseña incorrectos"
+        return _redirect_with_field_errors(
+            request,
+            "login",
+            {"email": message, "password": message},
+        )
+
+
+
+RESET_EMAIL_KEY = "reset_email"
+RESET_SENT_AT_KEY = "reset_code_sent_at"
+RESET_FEEDBACK_KEY = "reset_feedback"
+CODE_SENT_GENERIC_MESSAGE = (
+    "Si el correo está registrado en Nivora, te enviamos un código de 6 dígitos. "
+    "Revisa tu bandeja de entrada y la carpeta de spam."
+)
+CODE_TOO_SOON_MESSAGE = (
+    "Ya te enviamos un código hace un momento. Revisa tu correo o espera un "
+    "minuto para pedir otro."
+)
+EMAIL_NOT_CONFIGURED_MESSAGE = (
+    "El envío de correos no está configurado en este servidor, así que no "
+    "pudimos enviarte el código. Avisa al administrador de Nivora."
+)
+EMAIL_FAILED_MESSAGE = (
+    "No pudimos enviar el correo en este momento. Inténtalo de nuevo en unos "
+    "minutos."
+)
+
+
+def _is_dev(request: Request) -> bool:
+    return bool(request.app.debug or request.app.state.testing)
+
+
+async def _send_reset_code(request: Request, email: str, name: str, change: bool):
+    """Create a 6-digit code and e-mail it.
+
+    Returns ``(status, dev_code)``. ``status`` is ``"sent"``, ``"unknown_user"``,
+    ``"too_soon"``, ``"not_configured"`` or ``"failed"``. ``dev_code`` is only
+    filled in debug/testing mode when the e-mail could not be sent, so the flow
+    can be tried locally without SMTP.
+    """
+    config = request.app.state.settings
+    sent_at = request.session.get(RESET_SENT_AT_KEY, 0)
+    if (
+        request.session.get(RESET_EMAIL_KEY) == email
+        and time.time() - sent_at < config.PASSWORD_RESET_RESEND_SECONDS
+    ):
+        return "too_soon", None
+
+    mailer = EmailService(config)
+    if mailer.missing_settings() and not _is_dev(request):
+        mailer.send(email, "", "")  # logs which variables are missing
+        return "not_configured", None
+
+    code, user = auth_service.create_reset_code(email, config.PASSWORD_RESET_TOKEN_TTL)
+    if not code:
+        return "unknown_user", None
+
+    subject, text, html = reset_code_email(
+        name or user["nombre"], code, config.PASSWORD_RESET_TOKEN_TTL, change
+    )
+    result = await run_in_threadpool(mailer.send, email, subject, text, html)
+    if result.sent:
+        return "sent", None
+    status = "not_configured" if result.error == "not_configured" else "failed"
+    return status, (code if _is_dev(request) else None)
+
+
+def _go_to_code_form(request: Request, email: str, message: str, dev_code=None):
+    request.session[RESET_EMAIL_KEY] = email
+    request.session[RESET_SENT_AT_KEY] = time.time()
+    request.session[RESET_FEEDBACK_KEY] = {"mensaje": message, "dev_code": dev_code}
+    return redirect(request.url_for("auth.verificar_codigo"), status_code=303)
+
+
+@auth_router.api_route(
+    "/recuperar-contrasena",
+    methods=["GET", "POST"],
+    name="auth.recuperar_contrasena",
+)
+async def recuperar_contrasena(request: Request):
+    if request.method == "GET":
+        email = request.session.get("usuario", {}).get("email", "")
+        return render_template(request, "recuperar_contrasena.html", email=email)
+
+    form = await request.form()
+    email = str(form.get("email", "")).strip().lower()
+    if not EMAIL_PATTERN.fullmatch(email):
+        return render_template(
+            request,
+            "recuperar_contrasena.html",
+            status_code=400,
+            email=email,
+            field_errors={"email": "Introduce un correo electrónico válido"},
+        )
+
+    status, dev_code = await _send_reset_code(request, email, "", change=False)
+    # A missing account gets the same answer as a sent code, so the form
+    # cannot be used to discover which addresses are registered.
+    if status in {"sent", "unknown_user"}:
+        return _go_to_code_form(request, email, CODE_SENT_GENERIC_MESSAGE)
+    if status == "too_soon":
+        request.session[RESET_FEEDBACK_KEY] = {"mensaje": CODE_TOO_SOON_MESSAGE}
+        return redirect(request.url_for("auth.verificar_codigo"), status_code=303)
+    message = EMAIL_NOT_CONFIGURED_MESSAGE if status == "not_configured" else EMAIL_FAILED_MESSAGE
+    if dev_code:
+        return _go_to_code_form(request, email, message, dev_code)
     return render_template(
-        'recuperar_contrasena.html', mensaje=message, reset_link=reset_link
+        request,
+        "recuperar_contrasena.html",
+        status_code=503,
+        email=email,
+        mensaje=message,
+        mensaje_ok=False,
     )
 
 
-@auth_bp.route('/restablecer-contrasena/<token>', methods=['GET', 'POST'])
-def restablecer_contrasena(token):
-    if request.method == 'POST':
-        password = request.form.get('password', '')
-        confirmation = request.form.get('confirmacion', '')
-        if len(password) < 8:
-            return render_template(
-                'restablecer_contrasena.html', token=token,
-                mensaje='La contraseña debe tener al menos 8 caracteres',
-            ), 400
-        if password != confirmation:
-            return render_template(
-                'restablecer_contrasena.html', token=token,
-                mensaje='Las contraseñas no coinciden',
-            ), 400
-        if not auth_service.reset_password(token, password):
-            return render_template(
-                'restablecer_contrasena.html', token=token,
-                mensaje='El enlace venció o ya fue utilizado. Solicita uno nuevo.',
-            ), 400
-        return render_template(
-            'restablecer_contrasena.html',
-            mensaje='Contraseña actualizada. Ya puedes iniciar sesión.',
-            completado=True,
+@auth_router.post("/ajustes/cambiar-contrasena", name="auth.cambiar_contrasena")
+async def cambiar_contrasena(request: Request):
+    usuario = request.session.get("usuario")
+    if not usuario:
+        return redirect(request.url_for("auth.login"))
+
+    email = usuario.get("email", "")
+    status, dev_code = await _send_reset_code(
+        request, email, usuario.get("nombre", ""), change=True
+    )
+    if status == "sent":
+        return _go_to_code_form(
+            request,
+            email,
+            f"Te enviamos un código de 6 dígitos a {email}. Revisa también la carpeta de spam.",
+        )
+    if status == "too_soon":
+        request.session[RESET_FEEDBACK_KEY] = {"mensaje": CODE_TOO_SOON_MESSAGE}
+        return redirect(request.url_for("auth.verificar_codigo"), status_code=303)
+    if status == "unknown_user":
+        message = "No encontramos tu cuenta. Cierra sesión y vuelve a iniciarla."
+    elif status == "not_configured":
+        message = EMAIL_NOT_CONFIGURED_MESSAGE
+    else:
+        message = EMAIL_FAILED_MESSAGE
+    if dev_code:
+        return _go_to_code_form(request, email, message, dev_code)
+    request.session["password_change_feedback"] = {"mensaje": message, "ok": False}
+    return redirect(request.url_for("auth.ajustes"), status_code=303)
+
+
+def _code_form(request: Request, email: str, status_code=200, **context):
+    feedback = request.session.pop(RESET_FEEDBACK_KEY, None)
+    return render_template(
+        request,
+        "verificar_codigo.html",
+        status_code=status_code,
+        email=email,
+        feedback=feedback,
+        field_errors=context.pop("field_errors", {}),
+        **context,
+    )
+
+
+@auth_router.api_route(
+    "/verificar-codigo",
+    methods=["GET", "POST"],
+    name="auth.verificar_codigo",
+)
+async def verificar_codigo(request: Request):
+    email = request.session.get(RESET_EMAIL_KEY)
+    if not email:
+        return redirect(request.url_for("auth.recuperar_contrasena"))
+
+    if request.method == "GET":
+        return _code_form(request, email)
+
+    form = await request.form()
+    code = "".join(str(form.get("codigo", "")).split())
+    password = form.get("password", "")
+    confirmation = form.get("confirmacion", "")
+    if not (len(code) == 6 and code.isdigit()):
+        return _code_form(
+            request, email, 400,
+            field_errors={"codigo": "Escribe los 6 dígitos que llegaron a tu correo"},
+        )
+    if not auth_service.password_is_strong(password):
+        return _code_form(
+            request, email, 400,
+            field_errors={"password": "Usa al menos 8 caracteres, con letras y números"},
+        )
+    if password != confirmation:
+        return _code_form(
+            request, email, 400,
+            field_errors={
+                "password": "Las contraseñas no coinciden",
+                "confirmacion": "Las contraseñas no coinciden",
+            },
         )
 
-    return render_template('restablecer_contrasena.html', token=token)
+    result = auth_service.reset_password_with_code(email, code, password)
+    if result == "invalid":
+        return _code_form(
+            request, email, 400,
+            field_errors={"codigo": "El código no es correcto. Revísalo e inténtalo de nuevo."},
+        )
+    if result == "expired":
+        return _code_form(
+            request, email, 400,
+            codigo_vencido=True,
+            field_errors={
+                "codigo": "Este código venció, ya se usó o superó los intentos permitidos. "
+                "Pide uno nuevo."
+            },
+        )
+    request.session.pop(RESET_EMAIL_KEY, None)
+    request.session.pop(RESET_SENT_AT_KEY, None)
+    return render_template(
+        request,
+        "verificar_codigo.html",
+        completado=True,
+        sesion_iniciada="usuario" in request.session,
+    )
 
 
-@auth_bp.route('/registro', methods=['GET', 'POST'])
-def registro():
-    if request.method == 'POST':
-        nombre = request.form.get('nombre', '')
-        email = request.form.get('email', '')
-        password = request.form.get('password', '')
-        registrado, mensaje = auth_service.register(nombre, email, password)
+@auth_router.api_route("/registro", methods=["GET", "POST"], name="auth.registro")
+async def registro(request: Request):
+    if request.method == "GET":
+        usuario = request.session.get("usuario")
+        if usuario:
+            destination = (
+                "aprender.mostrar_aprender"
+                if usuario.get("recomendacion")
+                else "auth.nivel"
+            )
+            return redirect(request.url_for(destination))
+        return render_template(
+            request,
+            "registro.html",
+            field_errors=_consume_field_errors(request, "registro"),
+        )
+
+    if request.method == "POST":
+        form = await request.form()
+        nombre = form.get("nombre", "")
+        email = form.get("email", "")
+        password = form.get("password", "")
+        confirmation = form.get("confirmacion", "")
+        registrado, mensaje = auth_service.register(
+            nombre,
+            email,
+            password,
+            confirmation,
+        )
 
         if registrado:
             usuario = auth_service.authenticate(email, password)
             if usuario is None:
                 return render_template(
-                    'registro.html',
-                    mensaje='La cuenta se creó, pero no se pudo iniciar la sesión'
-                ), 500
-            session.clear()
-            session['usuario'] = usuario
-            session['progreso'] = progress_repository.find_by_user(usuario['id_persona'])
-            return redirect(url_for('auth.nivel'))
+                    request,
+                    "registro.html",
+                    status_code=500,
+                    mensaje="La cuenta se creó, pero no se pudo iniciar la sesión",
+                )
+            request.session.clear()
+            request.session["usuario"] = usuario
+            request.session["progreso"] = progress_repository.find_by_user(
+                usuario["id_persona"]
+            )
+            return redirect(
+                request.url_for("auth.nivel"),
+                status_code=303,
+            )
 
-        return render_template(
-            'registro.html',
-            mensaje=mensaje
-        )
+        if "nombre" in mensaje:
+            fields = {"nombre": mensaje}
+        elif "correo" in mensaje or "correo electrónico" in mensaje:
+            fields = {"email": mensaje}
+        elif "no coinciden" in mensaje:
+            fields = {"password": mensaje, "confirmacion": mensaje}
+        else:
+            fields = {"password": mensaje}
+        return _redirect_with_field_errors(request, "registro", fields)
 
-    return render_template('registro.html')
 
+@auth_router.api_route("/nivel", methods=["GET", "POST"], name="auth.nivel")
+async def nivel(request: Request):
+    if "usuario" not in request.session:
+        return redirect(request.url_for("auth.registro"))
+    if (
+        request.method == "GET"
+        and request.session["usuario"].get("recomendacion")
+    ):
+        return redirect(request.url_for("aprender.mostrar_aprender"))
 
-@auth_bp.route('/nivel', methods=['GET', 'POST'])
-def nivel():
-    if 'usuario' not in session:
-        return redirect(url_for('auth.registro'))
-
-    if request.method == 'POST':
-        if request.form.get('nivel_inicial') == 'no_se_nada':
+    if request.method == "POST":
+        form = await request.form()
+        if form.get("nivel_inicial") == "no_se_nada":
             recomendacion = auth_service.recommend_level(["", "", ""])
         else:
             quiz_answers = [
-                request.form.get(f'pregunta_{number}', '')
-                for number in range(1, 4)
+                form.get(f"pregunta_{number}", "") for number in range(1, 4)
             ]
             if any(not answer for answer in quiz_answers):
                 return render_template(
-                    'nivel.html', mensaje='Responde las tres preguntas para continuar'
-                ), 400
+                    request,
+                    "nivel.html",
+                    status_code=400,
+                    mensaje="Responde las tres preguntas para continuar",
+                )
             recomendacion = auth_service.recommend_level(quiz_answers)
 
-        session['usuario']['nivel'] = recomendacion['codigo']
-        session['usuario']['recomendacion'] = recomendacion
-        session.modified = True
-        return redirect(url_for('aprender.mostrar_aprender'))
+        usuario = dict(request.session["usuario"])
+        usuario["nivel"] = recomendacion["codigo"]
+        usuario["recomendacion"] = recomendacion
+        request.session["usuario"] = usuario
+        return redirect(request.url_for("aprender.mostrar_aprender"))
 
-    return render_template('nivel.html')
-
-
-@auth_bp.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('home'))
+    return render_template(request, "nivel.html")
 
 
-@auth_bp.route('/ajustes')
-def ajustes():
-    if 'usuario' not in session:
-        return redirect(url_for('auth.login'))
+@auth_router.post("/logout", name="auth.logout")
+async def logout(request: Request):
+    request.session.clear()
+    return redirect(request.url_for("home"), status_code=303)
 
-    return render_template('ajustes.html', usuario=session['usuario'])
+
+@auth_router.get("/ajustes", name="auth.ajustes")
+async def ajustes(request: Request):
+    if "usuario" not in request.session:
+        return redirect(request.url_for("auth.login"))
+
+    return render_template(
+        request,
+        "ajustes.html",
+        usuario=request.session["usuario"],
+        feedback=request.session.pop("password_change_feedback", None),
+    )

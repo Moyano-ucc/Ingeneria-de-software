@@ -14,6 +14,9 @@
     <div class="hero-visual">
         <div class="orbit orbit-one"></div>
         <div class="orbit orbit-two"></div>
+        <span class="hero-spark hero-spark-one" aria-hidden="true"></span>
+        <span class="hero-spark hero-spark-two" aria-hidden="true"></span>
+        <span class="hero-spark hero-spark-three" aria-hidden="true"></span>
         <div class="code-card">
             <div class="code-top"><span></span><span></span><span></span><b>nivora.py</b></div>
             <pre><code><i>def</i> <strong>crear_futuro</strong>(<em>idea</em>):
@@ -27,7 +30,7 @@
 </section>
 
 <section class="home-stats container">
-    <div><strong>3</strong><span>unidades para dominar</span></div>
+    <div><strong>4</strong><span>unidades para dominar</span></div>
     <div><strong>100%</strong><span>práctica a tu ritmo</span></div>
     <div><strong>0</strong><span>experiencia necesaria</span></div>
 </section>
@@ -39,7 +42,7 @@
         <p>Una experiencia pensada para que cada concepto termine convertido en algo que puedes construir.</p>
     </div>
     <div class="offer-grid">
-        <article class="offer-card offer-card">
+        <article class="offer-card">
             <span class="offer-number">01</span>
             <h3>Unidades guiadas</h3>
             <p>Lecciones ordenadas desde los fundamentos hasta las estructuras que usarás en proyectos reales.</p>
@@ -59,5 +62,6 @@
         </article>
     </div>
 </section>
+<script src="{{ url_for('static', filename='js/motion.js') }}?v=3" defer></script>
 {% endblock %}
 ```

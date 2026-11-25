@@ -1,0 +1,110 @@
+{
+  "info": {
+    "name": "Nivora API",
+    "description": "Pruebas de la API REST de Nivora (plan de pruebas, sección API). Importa este archivo en Postman, ajusta la variable baseUrl y ejecuta la colección con el Collection Runner, o desde la terminal con: npx newman run qa/postman/Nivora_API.postman_collection.json --env-var baseUrl=http://127.0.0.1:8000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" }
+  ],
+  "item": [
+    {
+      "name": "API-01 Salud del servicio",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+        "pm.test('Estado ok', () => pm.expect(pm.response.json().status).to.eql('ok'));",
+        "pm.test('Responde en menos de 500 ms', () => pm.expect(pm.response.responseTime).to.be.below(500));"
+      ] } }]
+    },
+    {
+      "name": "API-02 Listar lecciones",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/lecciones" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "const body = pm.response.json();",
+        "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+        "pm.test('Hay 16 lecciones', () => pm.expect(body.lecciones).to.have.lengthOf(16));",
+        "pm.test('Cada lección tiene id, título, unidad y descripción', () => body.lecciones.forEach(l => pm.expect(l).to.include.keys('id', 'titulo', 'unidad', 'descripcion')));"
+      ] } }]
+    },
+    {
+      "name": "API-03 Consultar una lección existente",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/lecciones/variables" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+        "pm.test('Es la lección pedida', () => pm.expect(pm.response.json().id).to.eql('variables'));",
+        "pm.test('Tiene 3 preguntas', () => pm.expect(pm.response.json().questions).to.have.lengthOf(3));"
+      ] } }]
+    },
+    {
+      "name": "API-04 Consultar una lección inexistente",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/lecciones/no-existe" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+        "pm.test('Mensaje en JSON', () => pm.expect(pm.response.json().detail).to.eql('Lección no encontrada'));"
+      ] } }]
+    },
+    {
+      "name": "API-05 Evaluar 3 de 3 correctas (clase válida, completa)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/lecciones/variables/evaluar",
+        "body": { "mode": "raw", "raw": "{\"answers\": [\"nombre\", \"int\", \"True\"]}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+        "pm.test('Puntuación 3 y completada', () => { const r = pm.response.json(); pm.expect(r.puntuacion).to.eql(3); pm.expect(r.completada).to.be.true; });"
+      ] } }]
+    },
+    {
+      "name": "API-06 Evaluar 2 de 3 correctas (límite: no completa)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/lecciones/variables/evaluar",
+        "body": { "mode": "raw", "raw": "{\"answers\": [\"nombre\", \"int\", \"False\"]}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+        "pm.test('Puntuación 2 y no completada', () => { const r = pm.response.json(); pm.expect(r.puntuacion).to.eql(2); pm.expect(r.completada).to.be.false; });"
+      ] } }]
+    },
+    {
+      "name": "API-07 Evaluar con 2 respuestas (incompleto)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/lecciones/variables/evaluar",
+        "body": { "mode": "raw", "raw": "{\"answers\": [\"nombre\", \"int\"]}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+      ] } }]
+    },
+    {
+      "name": "API-08 Evaluar con 0 respuestas (bajo el mínimo)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/lecciones/variables/evaluar",
+        "body": { "mode": "raw", "raw": "{\"answers\": []}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 422', () => pm.response.to.have.status(422));"
+      ] } }]
+    },
+    {
+      "name": "API-09 Evaluar con 4 respuestas (sobre el máximo)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/lecciones/variables/evaluar",
+        "body": { "mode": "raw", "raw": "{\"answers\": [\"nombre\", \"int\", \"True\", \"extra\"]}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Responde 422', () => pm.response.to.have.status(422));"
+      ] } }]
+    }
+  ]
+}

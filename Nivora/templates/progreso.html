@@ -19,6 +19,27 @@
 
     </section>
 
+    <section class="overall-progress" aria-label="Progreso general">
+        <div>
+            <p class="eyebrow">Avance general</p>
+            <strong>{{ progreso.general.completadas }} de {{ progreso.general.total }} lecciones</strong>
+        </div>
+        <strong>{{ progreso.general.porcentaje }}%</strong>
+        <div class="progreso-barra">
+            <div class="progreso-barra-fill" style="width: {{ progreso.general.porcentaje }}%;"></div>
+        </div>
+    </section>
+
+    <section class="progress-certificate {{ 'is-ready' if progreso.curso_completado else '' }}" aria-label="Certificado">
+        <div>
+            <strong>{% if progreso.curso_completado %}🎓 ¡Completaste Nivora!{% else %}🎓 Certificado de finalización{% endif %}</strong>
+            <p>{% if progreso.curso_completado %}Tu certificado está listo para descargar.{% else %}Completa las {{ progreso.general.total }} lecciones para obtenerlo. Te faltan {{ progreso.general.total - progreso.general.completadas }}.{% endif %}</p>
+        </div>
+        {% if progreso.curso_completado %}
+            <a class="btn-yellow" href="{{ url_for('certificado.mostrar') }}">Ver mi certificado</a>
+        {% endif %}
+    </section>
+
     <h2 style="font-weight: normal; margin-bottom: 1.5rem;">
         Tus unidades de aprendizaje
     </h2>
@@ -40,7 +61,7 @@
                     {{ ruta.completadas }}
                     de
                     {{ ruta.total }}
-                    actividades completadas
+                    lecciones completadas
                 </p>
 
                 <div class="progreso-barra">

@@ -1,19 +1,38 @@
+import logging
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from views.responses import error_page
 
 
-def register_error_handlers(app):
-    @app.errorhandler(413)
-    def request_too_large(_error):
-        return error_page("La solicitud es demasiado grande", 413)
+def register_error_handlers(app: FastAPI) -> None:
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, error: StarletteHTTPException):
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(
+                status_code=error.status_code,
+                content={"detail": error.detail},
+                headers=error.headers,
+            )
+        message = (
+            "La página no existe"
+            if error.status_code == 404
+            else str(error.detail)
+        )
+        return error_page(request, message, error.status_code)
 
-    @app.errorhandler(400)
-    def bad_request(error):
-        return error_page(error.description, 400)
-
-    @app.errorhandler(404)
-    def not_found(_error):
-        return error_page("La página no existe", 404)
-
-    @app.errorhandler(500)
-    def internal_error(_error):
-        return error_page("Ocurrió un error interno", 500)
+    @app.exception_handler(Exception)
+    async def internal_error(request: Request, error: Exception):
+        logging.getLogger("nivora").exception(
+            "Error interno al atender %s",
+            request.url.path,
+            exc_info=error,
+        )
+        if request.url.path.startswith("/api/"):
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Ocurrió un error interno"},
+            )
+        return error_page(request, "Ocurrió un error interno", 500)

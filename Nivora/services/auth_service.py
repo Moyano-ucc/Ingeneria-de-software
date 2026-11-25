@@ -1,6 +1,7 @@
 import hashlib
 import re
 import secrets
+import sqlite3
 import time
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -16,7 +17,16 @@ class AuthService:
         self.users = users or UserRepository()
         self.reset_token_ttl = reset_token_ttl
 
-    def register(self, name, email, password, quiz_answers=None):
+    @staticmethod
+    def password_is_strong(password):
+        password = password or ""
+        return (
+            len(password) >= 8
+            and any(character.isalpha() for character in password)
+            and any(character.isdigit() for character in password)
+        )
+
+    def register(self, name, email, password, confirmation=None):
         name = (name or "").strip()
         email = (email or "").strip().lower()
 
@@ -24,15 +34,17 @@ class AuthService:
             return False, "El nombre debe tener entre 2 y 30 caracteres"
         if not EMAIL_PATTERN.fullmatch(email):
             return False, "Introduce un correo electrónico válido"
-        if len(password or "") < 8:
-            return False, "La contraseña debe tener al menos 8 caracteres"
+        if confirmation is not None and password != confirmation:
+            return False, "Las contraseñas no coinciden"
+        if not self.password_is_strong(password):
+            return False, "Usa al menos 8 caracteres, con letras y números"
         if self.users.find_by_email(email):
             return False, "El correo electrónico ya está registrado"
 
         try:
             self.users.create(name, email, generate_password_hash(password))
-        except Exception:
-            return False, "Error al crear la cuenta"
+        except sqlite3.IntegrityError:
+            return False, "El correo electrónico ya está registrado"
         return True, "Cuenta creada exitosamente"
 
     @staticmethod
@@ -66,15 +78,6 @@ class AuthService:
             "leccion": "variables",
         }
 
-    @staticmethod
-    def grade_lesson(answers):
-        correct_answers = ["nombre", "int", "True"]
-        score = sum(
-            answer == correct
-            for answer, correct in zip(answers, correct_answers)
-        )
-        return score, len(correct_answers)
-
     def authenticate(self, email, password):
         user = self.users.find_by_email((email or "").strip().lower())
         if not user:
@@ -96,23 +99,48 @@ class AuthService:
             "email": user["correo"],
         }
 
-    def create_password_reset(self, email, ttl=None):
+    # ---- password reset with a 6-digit code ----------------------------
+    RESET_CODE_MAX_ATTEMPTS = 5
+
+    @staticmethod
+    def _hash_code(user_id, code):
+        # The user id is part of the hash, so two people can receive the same
+        # code without colliding in the PASSWORD_RESET table.
+        value = f"{user_id}:{(code or '').strip()}"
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    def create_reset_code(self, email, ttl=None):
+        """Create a one-time 6-digit code; return ``(code, user)`` or ``(None, None)``.
+
+        A new code replaces any previous one for the same account.
+        """
         user = self.users.find_by_email((email or "").strip().lower())
         if not user:
-            return None
+            return None, None
 
-        token = secrets.token_urlsafe(32)
-        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        code = f"{secrets.randbelow(1_000_000):06d}"
         self.users.create_password_reset(
-            user["id_persona"], token_hash,
+            user["id_persona"],
+            self._hash_code(user["id_persona"], code),
             time.time() + (self.reset_token_ttl if ttl is None else ttl),
         )
-        return token
+        return code, user
 
-    def reset_password(self, token, password):
-        if len(password or "") < 8:
-            return False
-        token_hash = hashlib.sha256((token or "").encode("utf-8")).hexdigest()
-        return self.users.update_password_with_reset(
-            token_hash, generate_password_hash(password), time.time()
+    def reset_password_with_code(self, email, code, password):
+        """Return ``"ok"``, ``"weak"``, ``"invalid"`` or ``"expired"``.
+
+        ``"expired"`` also covers used codes, unknown e-mails and codes locked
+        after too many wrong attempts, so the answer reveals nothing else.
+        """
+        if not self.password_is_strong(password):
+            return "weak"
+        user = self.users.find_by_email((email or "").strip().lower())
+        if not user:
+            return "expired"
+        return self.users.consume_reset_code(
+            user["id_persona"],
+            self._hash_code(user["id_persona"], code),
+            generate_password_hash(password),
+            time.time(),
+            self.RESET_CODE_MAX_ATTEMPTS,
         )

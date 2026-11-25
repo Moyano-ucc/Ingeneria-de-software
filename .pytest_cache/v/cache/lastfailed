@@ -1,0 +1,4 @@
+{
+  "Nivora/tests/test_app.py": true,
+  "Nivora/tests/test_auth_service.py": true
+}

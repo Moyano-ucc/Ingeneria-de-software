@@ -2,7 +2,7 @@ name: Integracion Continua - NIVORA
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "Nivorafinal2" ]
   pull_request:
     branches: [ "main" ]
 
@@ -17,13 +17,21 @@ jobs:
     - name: Configurar Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
 
     - name: Instalar dependencias
       run: |
         python -m pip install --upgrade pip
-        pip install flask
+        pip install -r Nivora/requirements.txt
 
     - name: Verificar sintaxis de archivos Python (NIVORA)
       run: |
         python -m compileall Nivora/
+
+    - name: Smoke test de NIVORA (comprobación rápida)
+      working-directory: Nivora
+      run: python -m pytest -m smoke -q
+
+    - name: Pruebas de regresión de NIVORA (suite completa)
+      working-directory: Nivora
+      run: python -m pytest -q

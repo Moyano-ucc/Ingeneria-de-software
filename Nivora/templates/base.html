@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nivora - Aprende Python</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=5">
 </head>
 
 <body>
@@ -20,7 +20,10 @@
                 <span class="user-avatar">{{ session['usuario']['nombre'][0]|upper }}</span>
                 {{ session['usuario']['nombre'] }}
             </a>
-            <a href="/logout" class="nav-muted">Salir</a>
+            <form method="POST" action="{{ url_for('auth.logout') }}" class="logout-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="nav-muted logout-button">Salir</button>
+            </form>
         {% else %}
             <a href="/login" class="nav-login">Iniciar sesión</a>
         {% endif %}
@@ -57,7 +60,10 @@
 
             {% if session.get('usuario') %}
                 <a href="/ajustes">Ajustes</a>
-                <a href="/logout">Cerrar sesión</a>
+                <form method="POST" action="{{ url_for('auth.logout') }}" class="logout-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">Cerrar sesión</button>
+                </form>
             {% else %}
                 <a href="/registro">Crear una cuenta</a>
                 <a href="/login">Iniciar sesión</a>

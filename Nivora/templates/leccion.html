@@ -2,29 +2,72 @@
 
 {% block content %}
 <article class="lesson-page container">
-    <p class="eyebrow">Lección {{ '%02d'|format(lesson.numero) }} · Fundamentos</p>
+    <p class="eyebrow">Unidad {{ '%02d'|format(lesson.unit_id) }} · Lección {{ '%02d'|format(lesson.numero) }}</p>
     <h1>{{ lesson.titulo }}</h1>
     <p class="lesson-intro">{{ lesson.descripcion }}</p>
 
-    <section class="lesson-section">
+    <section class="lesson-section lesson-theory">
         <h2>Antes del quiz</h2>
-        {% if lesson.id == 'variables' %}
-            <p>Una variable guarda un valor. Python tiene tipos como <code>str</code>, <code>int</code>, <code>float</code> y <code>bool</code>.</p>
-            <pre><code>nombre = "Ana"
-edad = 20
-activo = True</code></pre>
-        {% elif lesson.id == 'operadores' %}
-            <p>Los operadores permiten calcular y comparar valores.</p>
-            <pre><code>suma = 3 + 4
-mayor = 5 &gt; 2</code></pre>
-        {% elif lesson.id == 'entrada_salida' %}
-            <p><code>print</code> muestra información y <code>input</code> recibe texto.</p>
-            <pre><code>nombre = input("Tu nombre: ")
-print(nombre)</code></pre>
+        {% if material %}
+            <p>{{ material.explicacion }}</p>
+            {% if material.analogia %}
+                <aside class="theory-analogy"><strong>En la vida diaria:</strong> {{ material.analogia }}</aside>
+            {% endif %}
+
+            {% if material.proyecto %}
+                <div class="theory-project">
+                    <h3>El proyecto</h3>
+                    <p>{{ material.proyecto.enunciado }}</p>
+                    <h4>Requisitos</h4>
+                    <ul>{% for requisito in material.proyecto.requisitos %}<li>{{ requisito }}</li>{% endfor %}</ul>
+                    <h4>Cómo planearlo antes de programar</h4>
+                    <ol>{% for paso in material.proyecto.plan %}<li>{{ paso }}</li>{% endfor %}</ol>
+                </div>
+                <h3>Una solución completa</h3>
+            {% else %}
+                <h3>Ejemplo</h3>
+            {% endif %}
+            <pre><code>{{ material.ejemplo }}</code></pre>
+
+            {% if material.lineas %}
+                <h3>¿Qué hace cada línea?</h3>
+                <ol class="theory-lines">
+                    {% for codigo, detalle in material.lineas %}
+                        <li><code>{{ codigo }}</code><span>{{ detalle }}</span></li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+
+            {% if material.salida %}
+                <h3>Resultado en pantalla</h3>
+                {% if material.entrada %}<p class="theory-note">Si la persona escribe {% for valor in material.entrada %}<code>{{ valor }}</code>{% if not loop.last %} y {% endif %}{% endfor %}:</p>{% endif %}
+                <pre class="theory-output"><code>{{ material.salida }}</code></pre>
+            {% endif %}
+
+            {% if material.errores %}
+                <h3>Errores comunes</h3>
+                <div class="theory-errors">
+                    {% for error in material.errores %}
+                        <div class="theory-error">
+                            <pre class="code-wrong"><code>{{ error.codigo }}</code></pre>
+                            <p>{{ error.problema }}</p>
+                            <p class="theory-fix"><strong>Corrección:</strong> <code>{{ error.correccion }}</code></p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if material.reto %}
+                <h3>Pon a prueba tu intuición: ¿qué imprime?</h3>
+                <pre><code>{{ material.reto.codigo }}</code></pre>
+                <details class="theory-reveal">
+                    <summary>Piensa tu respuesta y luego compruébala</summary>
+                    <pre class="theory-output"><code>{{ material.reto.respuesta }}</code></pre>
+                    <p>{{ material.reto.explicacion }}</p>
+                </details>
+            {% endif %}
         {% else %}
-            <p>Las listas agrupan valores. Puedes consultar su tamaño y agregar elementos.</p>
-            <pre><code>frutas = ["manzana"]
-frutas.append("pera")</code></pre>
+            <p>{{ lesson.descripcion }}</p>
         {% endif %}
     </section>
 
@@ -48,19 +91,41 @@ frutas.append("pera")</code></pre>
                 <button type="submit" class="btn-yellow">Evaluar quiz</button>
             {% else %}
                 <p class="quiz-score">Quiz evaluado{% if not resultado.completada %}. Pulsa “Repetir quiz” para intentarlo de nuevo.{% else %}: lección completada.{% endif %}</p>
+                {% if not resultado.completada %}
+                    <div class="quiz-actions quiz-actions-inline">
+                        <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}?repetir=1" class="btn-secondary">Repetir quiz</a>
+                    </div>
+                {% endif %}
             {% endif %}
         </form>
     </section>
 
+    <section class="lesson-challenge">
+        <div>
+            <p class="eyebrow">Reto práctico</p>
+            <h2>Ahora escribe tu propio código</h2>
+            <p>Resuelve un ejercicio guiado sobre {{ lesson.titulo }} y comprueba tu solución.</p>
+        </div>
+        <a class="btn-yellow" href="{{ url_for('practica.mostrar_practica', ejercicio=lesson.id) }}">Abrir ejercicio</a>
+    </section>
+
     {% if resultado %}
         <div class="quiz-actions">
-            {% if not resultado.completada %}
-                <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}" class="btn-secondary">Repetir quiz</a>
+            {% if resultado.completada %}
+                <a href="{{ url_for('aprender.leccion', lesson_id=lesson.id) }}?repetir=1" class="btn-secondary">Repasar lección</a>
             {% endif %}
-            {% if resultado.next_lesson %}
+            {% if not resultado.completada %}
+                {% if resultado.leccion_completada %}
+                    <a href="{{ url_for('aprender.ruta', route_id='%02d'|format(lesson.unit_id)) }}" class="btn-yellow">Volver a la unidad</a>
+                {% endif %}
+            {% elif resultado.next_lesson %}
                 <a href="{{ url_for('aprender.leccion', lesson_id=resultado.next_lesson.id) }}" class="btn-yellow">Siguiente lección</a>
+            {% elif resultado.next_route_id %}
+                <a href="{{ url_for('aprender.ruta', route_id=resultado.next_route_id) }}" class="btn-yellow">Continuar a la unidad {{ resultado.next_route_id }}</a>
+            {% elif resultado.curso_completado %}
+                <a href="{{ url_for('certificado.mostrar') }}" class="btn-yellow">🎓 Obtener mi certificado</a>
             {% else %}
-                <a href="{{ url_for('aprender.ruta', route_id='01') }}" class="btn-yellow">Ver ruta completa</a>
+                <a href="{{ url_for('aprender.mostrar_aprender') }}" class="btn-yellow">Ver mis unidades</a>
             {% endif %}
         </div>
     {% endif %}
