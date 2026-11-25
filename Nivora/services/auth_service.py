@@ -99,30 +99,48 @@ class AuthService:
             "email": user["correo"],
         }
 
-    def create_password_reset(self, email, ttl=None):
-        user = self.users.find_by_email((email or "").strip().lower())
-        if not user:
-            return None
-
-        token = secrets.token_urlsafe(32)
-        token_hash = self._hash_token(token)
-        self.users.create_password_reset(
-            user["id_persona"], token_hash,
-            time.time() + (self.reset_token_ttl if ttl is None else ttl),
-        )
-        return token
+    # ---- password reset with a 6-digit code ----------------------------
+    RESET_CODE_MAX_ATTEMPTS = 5
 
     @staticmethod
-    def _hash_token(token):
-        return hashlib.sha256((token or "").encode("utf-8")).hexdigest()
+    def _hash_code(user_id, code):
+        # The user id is part of the hash, so two people can receive the same
+        # code without colliding in the PASSWORD_RESET table.
+        value = f"{user_id}:{(code or '').strip()}"
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
-    def reset_token_is_valid(self, token):
-        return self.users.reset_token_is_valid(self._hash_token(token), time.time())
+    def create_reset_code(self, email, ttl=None):
+        """Create a one-time 6-digit code; return ``(code, user)`` or ``(None, None)``.
 
-    def reset_password(self, token, password):
+        A new code replaces any previous one for the same account.
+        """
+        user = self.users.find_by_email((email or "").strip().lower())
+        if not user:
+            return None, None
+
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        self.users.create_password_reset(
+            user["id_persona"],
+            self._hash_code(user["id_persona"], code),
+            time.time() + (self.reset_token_ttl if ttl is None else ttl),
+        )
+        return code, user
+
+    def reset_password_with_code(self, email, code, password):
+        """Return ``"ok"``, ``"weak"``, ``"invalid"`` or ``"expired"``.
+
+        ``"expired"`` also covers used codes, unknown e-mails and codes locked
+        after too many wrong attempts, so the answer reveals nothing else.
+        """
         if not self.password_is_strong(password):
-            return False
-        token_hash = self._hash_token(token)
-        return self.users.update_password_with_reset(
-            token_hash, generate_password_hash(password), time.time()
+            return "weak"
+        user = self.users.find_by_email((email or "").strip().lower())
+        if not user:
+            return "expired"
+        return self.users.consume_reset_code(
+            user["id_persona"],
+            self._hash_code(user["id_persona"], code),
+            generate_password_hash(password),
+            time.time(),
+            self.RESET_CODE_MAX_ATTEMPTS,
         )

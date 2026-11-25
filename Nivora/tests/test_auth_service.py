@@ -28,18 +28,19 @@ class FakeUsers:
                 user["contrasena"] = password_hash
 
     def create_password_reset(self, user_id, token_hash, expires_at):
-        self.resets[token_hash] = {"id_persona": user_id, "expires_at": expires_at}
+        self.resets[user_id] = {"token_hash": token_hash, "expires_at": expires_at}
 
-    def update_password_with_reset(self, token_hash, password_hash, now):
-        reset = self.resets.get(token_hash)
+    def consume_reset_code(self, user_id, code_hash, password_hash, now, max_attempts):
+        reset = self.resets.get(user_id)
         if not reset or reset["expires_at"] <= now or reset.get("used_at"):
-            return False
+            return "expired"
+        if reset["token_hash"] != code_hash:
+            return "invalid"
         for user in self.users.values():
-            if user["id_persona"] == reset["id_persona"]:
+            if user["id_persona"] == user_id:
                 user["contrasena"] = password_hash
-                reset["used_at"] = now
-                return True
-        return False
+        reset["used_at"] = now
+        return "ok"
 
 
 def test_register_and_authenticate_hashes_password():
@@ -82,29 +83,51 @@ def test_recommendation_uses_quiz_score():
     assert advanced["leccion"] == "variables"
 
 
-def test_password_reset_is_single_use_and_persists_in_fresh_sqlite(tmp_path):
+def test_reset_code_is_single_use_and_persists_in_fresh_sqlite(tmp_path):
     database = DatabaseConnection(config={"database_path": str(tmp_path / "nivora.db")})
     users = UserRepository(database)
     users.create("Ana", "ana@example.com", generate_password_hash("old-password"))
     service = AuthService(users)
 
-    token = service.create_password_reset("ANA@example.com", ttl=60)
+    code, user = service.create_reset_code("ANA@example.com", ttl=60)
 
-    assert token
-    assert service.reset_password(token, "new-password-123") is True
+    assert len(code) == 6 and code.isdigit()
+    assert user["correo"] == "ana@example.com"
+    assert service.reset_password_with_code("ana@example.com", code, "new-password-123") == "ok"
     assert check_password_hash(
         users.find_by_email("ana@example.com")["contrasena"],
         "new-password-123",
     )
-    assert service.reset_password(token, "another-password") is False
+    assert service.reset_password_with_code("ana@example.com", code, "another-password-1") == "expired"
 
 
-def test_password_reset_rejects_unknown_users_and_short_passwords():
+def test_reset_code_expires_and_locks_after_too_many_attempts(tmp_path):
+    database = DatabaseConnection(config={"database_path": str(tmp_path / "nivora.db")})
+    users = UserRepository(database)
+    users.create("Ana", "ana@example.com", generate_password_hash("old-password"))
+    service = AuthService(users)
+
+    expired_code, _ = service.create_reset_code("ana@example.com", ttl=-1)
+    assert service.reset_password_with_code("ana@example.com", expired_code, "new-password-1") == "expired"
+
+    code, _ = service.create_reset_code("ana@example.com", ttl=60)
+    wrong = "000000" if code != "000000" else "111111"
+    results = [
+        service.reset_password_with_code("ana@example.com", wrong, "new-password-1")
+        for _ in range(AuthService.RESET_CODE_MAX_ATTEMPTS)
+    ]
+    assert results[:-1] == ["invalid"] * (AuthService.RESET_CODE_MAX_ATTEMPTS - 1)
+    assert results[-1] == "expired"
+    assert service.reset_password_with_code("ana@example.com", code, "new-password-1") == "expired"
+
+
+def test_reset_code_rejects_unknown_users_and_weak_passwords():
     service = AuthService(FakeUsers())
 
-    assert service.create_password_reset("missing@example.com") is None
-    assert service.reset_password("invalid-token", "short") is False
-    assert service.reset_password("invalid-token", "letters-only") is False
+    assert service.create_reset_code("missing@example.com") == (None, None)
+    assert service.reset_password_with_code("missing@example.com", "123456", "short") == "weak"
+    assert service.reset_password_with_code("missing@example.com", "123456", "letters-only") == "weak"
+    assert service.reset_password_with_code("missing@example.com", "123456", "new-password-1") == "expired"
 
 
 def test_database_creates_a_custom_parent_directory(tmp_path):

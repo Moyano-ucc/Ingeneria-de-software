@@ -1,11 +1,13 @@
+import time
+
 from fastapi import APIRouter, Request
 from starlette.concurrency import run_in_threadpool
 
 from repositories.progress_repository import ProgressRepository
 from security import csrf_protected
 from services.auth_service import EMAIL_PATTERN, AuthService
-from services.email_service import EmailService, password_email
-from views.responses import public_url, redirect, render_template
+from services.email_service import EmailService, reset_code_email
+from views.responses import redirect, render_template
 
 
 auth_router = APIRouter(dependencies=csrf_protected)
@@ -65,13 +67,20 @@ async def login(request: Request):
 
 
 
-RECOVERY_GENERIC_MESSAGE = (
-    "Si el correo está registrado en Nivora, te enviamos un enlace para crear "
-    "una contraseña nueva. Revisa tu bandeja de entrada y la carpeta de spam."
+RESET_EMAIL_KEY = "reset_email"
+RESET_SENT_AT_KEY = "reset_code_sent_at"
+RESET_FEEDBACK_KEY = "reset_feedback"
+CODE_SENT_GENERIC_MESSAGE = (
+    "Si el correo está registrado en Nivora, te enviamos un código de 6 dígitos. "
+    "Revisa tu bandeja de entrada y la carpeta de spam."
+)
+CODE_TOO_SOON_MESSAGE = (
+    "Ya te enviamos un código hace un momento. Revisa tu correo o espera un "
+    "minuto para pedir otro."
 )
 EMAIL_NOT_CONFIGURED_MESSAGE = (
     "El envío de correos no está configurado en este servidor, así que no "
-    "pudimos enviarte el enlace. Avisa al administrador de Nivora."
+    "pudimos enviarte el código. Avisa al administrador de Nivora."
 )
 EMAIL_FAILED_MESSAGE = (
     "No pudimos enviar el correo en este momento. Inténtalo de nuevo en unos "
@@ -79,32 +88,50 @@ EMAIL_FAILED_MESSAGE = (
 )
 
 
-async def _send_password_link(request: Request, email: str, name: str, change: bool):
-    """Create a reset token and e-mail the link.
+def _is_dev(request: Request) -> bool:
+    return bool(request.app.debug or request.app.state.testing)
 
-    Returns ``(status, dev_link)`` where ``status`` is ``"sent"``,
-    ``"unknown_user"``, ``"not_configured"`` or ``"failed"``. ``dev_link`` is
-    only filled in debug/testing mode when the e-mail could not be sent, so
-    the flow can still be tested locally without SMTP.
+
+async def _send_reset_code(request: Request, email: str, name: str, change: bool):
+    """Create a 6-digit code and e-mail it.
+
+    Returns ``(status, dev_code)``. ``status`` is ``"sent"``, ``"unknown_user"``,
+    ``"too_soon"``, ``"not_configured"`` or ``"failed"``. ``dev_code`` is only
+    filled in debug/testing mode when the e-mail could not be sent, so the flow
+    can be tried locally without SMTP.
     """
     config = request.app.state.settings
+    sent_at = request.session.get(RESET_SENT_AT_KEY, 0)
+    if (
+        request.session.get(RESET_EMAIL_KEY) == email
+        and time.time() - sent_at < config.PASSWORD_RESET_RESEND_SECONDS
+    ):
+        return "too_soon", None
+
     mailer = EmailService(config)
-    token = auth_service.create_password_reset(email, config.PASSWORD_RESET_TOKEN_TTL)
-    if not token:
+    if mailer.missing_settings() and not _is_dev(request):
+        mailer.send(email, "", "")  # logs which variables are missing
+        return "not_configured", None
+
+    code, user = auth_service.create_reset_code(email, config.PASSWORD_RESET_TOKEN_TTL)
+    if not code:
         return "unknown_user", None
 
-    link = public_url(
-        request, request.url_for("auth.restablecer_contrasena", token=token)
-    )
-    subject, text, html = password_email(
-        name, link, config.PASSWORD_RESET_TOKEN_TTL, change
+    subject, text, html = reset_code_email(
+        name or user["nombre"], code, config.PASSWORD_RESET_TOKEN_TTL, change
     )
     result = await run_in_threadpool(mailer.send, email, subject, text, html)
     if result.sent:
         return "sent", None
-    dev_link = link if (request.app.debug or request.app.state.testing) else None
     status = "not_configured" if result.error == "not_configured" else "failed"
-    return status, dev_link
+    return status, (code if _is_dev(request) else None)
+
+
+def _go_to_code_form(request: Request, email: str, message: str, dev_code=None):
+    request.session[RESET_EMAIL_KEY] = email
+    request.session[RESET_SENT_AT_KEY] = time.time()
+    request.session[RESET_FEEDBACK_KEY] = {"mensaje": message, "dev_code": dev_code}
+    return redirect(request.url_for("auth.verificar_codigo"), status_code=303)
 
 
 @auth_router.api_route(
@@ -128,23 +155,24 @@ async def recuperar_contrasena(request: Request):
             field_errors={"email": "Introduce un correo electrónico válido"},
         )
 
-    status, dev_link = await _send_password_link(request, email, "", change=False)
-    # A missing account gets the same answer as a sent e-mail, so the form
+    status, dev_code = await _send_reset_code(request, email, "", change=False)
+    # A missing account gets the same answer as a sent code, so the form
     # cannot be used to discover which addresses are registered.
     if status in {"sent", "unknown_user"}:
-        message, ok = RECOVERY_GENERIC_MESSAGE, True
-    elif status == "not_configured":
-        message, ok = EMAIL_NOT_CONFIGURED_MESSAGE, False
-    else:
-        message, ok = EMAIL_FAILED_MESSAGE, False
+        return _go_to_code_form(request, email, CODE_SENT_GENERIC_MESSAGE)
+    if status == "too_soon":
+        request.session[RESET_FEEDBACK_KEY] = {"mensaje": CODE_TOO_SOON_MESSAGE}
+        return redirect(request.url_for("auth.verificar_codigo"), status_code=303)
+    message = EMAIL_NOT_CONFIGURED_MESSAGE if status == "not_configured" else EMAIL_FAILED_MESSAGE
+    if dev_code:
+        return _go_to_code_form(request, email, message, dev_code)
     return render_template(
         request,
         "recuperar_contrasena.html",
-        status_code=200 if ok else 503,
+        status_code=503,
         email=email,
         mensaje=message,
-        mensaje_ok=ok,
-        reset_link=dev_link,
+        mensaje_ok=False,
     )
 
 
@@ -155,91 +183,101 @@ async def cambiar_contrasena(request: Request):
         return redirect(request.url_for("auth.login"))
 
     email = usuario.get("email", "")
-    status, dev_link = await _send_password_link(
+    status, dev_code = await _send_reset_code(
         request, email, usuario.get("nombre", ""), change=True
     )
     if status == "sent":
-        message, ok = (
-            f"Te enviamos un correo a {email} con el enlace para cambiar tu "
-            "contraseña. Revisa también la carpeta de spam.",
-            True,
+        return _go_to_code_form(
+            request,
+            email,
+            f"Te enviamos un código de 6 dígitos a {email}. Revisa también la carpeta de spam.",
         )
-    elif status == "unknown_user":
-        message, ok = (
-            "No encontramos tu cuenta. Cierra sesión y vuelve a iniciarla.",
-            False,
-        )
+    if status == "too_soon":
+        request.session[RESET_FEEDBACK_KEY] = {"mensaje": CODE_TOO_SOON_MESSAGE}
+        return redirect(request.url_for("auth.verificar_codigo"), status_code=303)
+    if status == "unknown_user":
+        message = "No encontramos tu cuenta. Cierra sesión y vuelve a iniciarla."
     elif status == "not_configured":
-        message, ok = EMAIL_NOT_CONFIGURED_MESSAGE, False
+        message = EMAIL_NOT_CONFIGURED_MESSAGE
     else:
-        message, ok = EMAIL_FAILED_MESSAGE, False
-    request.session["password_change_feedback"] = {
-        "mensaje": message,
-        "ok": ok,
-        "reset_link": dev_link,
-    }
+        message = EMAIL_FAILED_MESSAGE
+    if dev_code:
+        return _go_to_code_form(request, email, message, dev_code)
+    request.session["password_change_feedback"] = {"mensaje": message, "ok": False}
     return redirect(request.url_for("auth.ajustes"), status_code=303)
 
 
-@auth_router.api_route(
-    "/restablecer-contrasena/{token}",
-    methods=["GET", "POST"],
-    name="auth.restablecer_contrasena",
-)
-async def restablecer_contrasena(request: Request, token: str):
-    if request.method == "POST":
-        form = await request.form()
-        password = form.get("password", "")
-        confirmation = form.get("confirmacion", "")
-        if not auth_service.password_is_strong(password):
-            return render_template(
-                request,
-                "restablecer_contrasena.html",
-                status_code=400,
-                token=token,
-                field_errors={
-                    "password": "Usa al menos 8 caracteres, con letras y números"
-                },
-            )
-        if password != confirmation:
-            return render_template(
-                request,
-                "restablecer_contrasena.html",
-                status_code=400,
-                token=token,
-                field_errors={
-                    "password": "Las contraseñas no coinciden",
-                    "confirmacion": "Las contraseñas no coinciden",
-                },
-            )
-        if not auth_service.reset_password(token, password):
-            return render_template(
-                request,
-                "restablecer_contrasena.html",
-                status_code=400,
-                enlace_invalido=True,
-                mensaje="El enlace venció o ya fue utilizado. Solicita uno nuevo.",
-            )
-        return render_template(
-            request,
-            "restablecer_contrasena.html",
-            mensaje="Contraseña actualizada. Ya puedes iniciar sesión.",
-            completado=True,
-        )
-
-    if not auth_service.reset_token_is_valid(token):
-        return render_template(
-            request,
-            "restablecer_contrasena.html",
-            status_code=400,
-            enlace_invalido=True,
-            mensaje="El enlace venció o ya fue utilizado. Solicita uno nuevo.",
-        )
+def _code_form(request: Request, email: str, status_code=200, **context):
+    feedback = request.session.pop(RESET_FEEDBACK_KEY, None)
     return render_template(
         request,
-        "restablecer_contrasena.html",
-        token=token,
-        field_errors={},
+        "verificar_codigo.html",
+        status_code=status_code,
+        email=email,
+        feedback=feedback,
+        field_errors=context.pop("field_errors", {}),
+        **context,
+    )
+
+
+@auth_router.api_route(
+    "/verificar-codigo",
+    methods=["GET", "POST"],
+    name="auth.verificar_codigo",
+)
+async def verificar_codigo(request: Request):
+    email = request.session.get(RESET_EMAIL_KEY)
+    if not email:
+        return redirect(request.url_for("auth.recuperar_contrasena"))
+
+    if request.method == "GET":
+        return _code_form(request, email)
+
+    form = await request.form()
+    code = "".join(str(form.get("codigo", "")).split())
+    password = form.get("password", "")
+    confirmation = form.get("confirmacion", "")
+    if not (len(code) == 6 and code.isdigit()):
+        return _code_form(
+            request, email, 400,
+            field_errors={"codigo": "Escribe los 6 dígitos que llegaron a tu correo"},
+        )
+    if not auth_service.password_is_strong(password):
+        return _code_form(
+            request, email, 400,
+            field_errors={"password": "Usa al menos 8 caracteres, con letras y números"},
+        )
+    if password != confirmation:
+        return _code_form(
+            request, email, 400,
+            field_errors={
+                "password": "Las contraseñas no coinciden",
+                "confirmacion": "Las contraseñas no coinciden",
+            },
+        )
+
+    result = auth_service.reset_password_with_code(email, code, password)
+    if result == "invalid":
+        return _code_form(
+            request, email, 400,
+            field_errors={"codigo": "El código no es correcto. Revísalo e inténtalo de nuevo."},
+        )
+    if result == "expired":
+        return _code_form(
+            request, email, 400,
+            codigo_vencido=True,
+            field_errors={
+                "codigo": "Este código venció, ya se usó o superó los intentos permitidos. "
+                "Pide uno nuevo."
+            },
+        )
+    request.session.pop(RESET_EMAIL_KEY, None)
+    request.session.pop(RESET_SENT_AT_KEY, None)
+    return render_template(
+        request,
+        "verificar_codigo.html",
+        completado=True,
+        sesion_iniciada="usuario" in request.session,
     )
 
 

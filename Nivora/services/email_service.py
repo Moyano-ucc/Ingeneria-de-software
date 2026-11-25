@@ -98,34 +98,31 @@ class EmailService:
         return EmailResult(True)
 
 
-def password_email(name: str, link: str, ttl_seconds: int, change: bool) -> tuple[str, str, str]:
-    """Build subject, plain text and HTML for a password link e-mail."""
+def reset_code_email(name: str, code: str, ttl_seconds: int, change: bool) -> tuple[str, str, str]:
+    """Build subject, plain text and HTML for a password reset code e-mail."""
     minutes = max(1, ttl_seconds // 60)
-    validity = (
-        f"{minutes // 60} hora{'s' if minutes // 60 != 1 else ''}"
-        if minutes % 60 == 0
-        else f"{minutes} minutos"
-    )
     greeting = f"Hola {name}," if name else "Hola,"
-    if change:
-        subject = "Cambia tu contraseña de Nivora"
-        intro = "Recibimos una solicitud para cambiar la contraseña de tu cuenta de Nivora."
-    else:
-        subject = "Recupera tu contraseña de Nivora"
-        intro = "Recibimos una solicitud para recuperar el acceso a tu cuenta de Nivora."
+    action = "cambiar tu contraseña" if change else "recuperar tu cuenta"
+    subject = f"{code} es tu código de Nivora"
     text = (
-        f"{greeting}\n\n{intro}\n\n"
-        f"Abre este enlace para crear una contraseña nueva (válido durante {validity}):\n\n"
-        f"{link}\n\n"
-        "El enlace solo puede usarse una vez. Si no solicitaste este cambio, "
-        "ignora este mensaje: tu contraseña actual seguirá funcionando.\n\n"
+        f"{greeting}\n\n"
+        f"Tu código para {action} en Nivora es:\n\n"
+        f"    {code}\n\n"
+        f"Escríbelo en Nivora junto con tu contraseña nueva. Es válido durante "
+        f"{minutes} minutos y solo puede usarse una vez.\n\n"
+        "Si no solicitaste este código, ignora este mensaje: tu contraseña actual "
+        "seguirá funcionando. Nunca compartas este código con nadie.\n\n"
         "Equipo de Nivora"
     )
     html = (
-        f"<p>{html_lib.escape(greeting)}</p><p>{intro}</p>"
-        f'<p><a href="{html_lib.escape(link, quote=True)}">Crear una contraseña nueva</a></p>'
-        f"<p>El enlace es válido durante {validity} y solo puede usarse una vez.</p>"
-        "<p>Si no solicitaste este cambio, ignora este mensaje: tu contraseña actual "
-        "seguirá funcionando.</p><p>Equipo de Nivora</p>"
+        f"<p>{html_lib.escape(greeting)}</p>"
+        f"<p>Tu código para {action} en Nivora es:</p>"
+        '<p style="font-size:28px;font-weight:bold;letter-spacing:6px;'
+        f'font-family:monospace">{code}</p>'
+        f"<p>Escríbelo en Nivora junto con tu contraseña nueva. Es válido durante "
+        f"{minutes} minutos y solo puede usarse una vez.</p>"
+        "<p>Si no solicitaste este código, ignora este mensaje: tu contraseña actual "
+        "seguirá funcionando. Nunca compartas este código con nadie.</p>"
+        "<p>Equipo de Nivora</p>"
     )
     return subject, text, html

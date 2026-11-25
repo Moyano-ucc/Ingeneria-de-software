@@ -22,8 +22,10 @@ class Config:
     SMTP_FROM = os.environ.get("NIVORA_SMTP_FROM")
     SMTP_USE_TLS = os.environ.get("NIVORA_SMTP_USE_TLS", "1") == "1"
     SMTP_USE_SSL = os.environ.get("NIVORA_SMTP_USE_SSL", "0") == "1"
-    PASSWORD_RESET_TOKEN_TTL = int(os.environ.get("NIVORA_PASSWORD_RESET_TTL", "3600"))
-    PUBLIC_BASE_URL = os.environ.get("NIVORA_PUBLIC_URL")
+    # Validity of the 6-digit password reset code, in seconds (15 minutes).
+    PASSWORD_RESET_TOKEN_TTL = int(os.environ.get("NIVORA_PASSWORD_RESET_TTL", "900"))
+    # Seconds a student must wait before asking for another code.
+    PASSWORD_RESET_RESEND_SECONDS = 60
 
 
 class TestingConfig(Config):

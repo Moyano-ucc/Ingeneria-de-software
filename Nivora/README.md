@@ -69,7 +69,7 @@ No actives `NIVORA_DEBUG` en producción.
    - `NIVORA_SECRET_KEY`: valor aleatorio largo y privado.
    - `NIVORA_COOKIE_SECURE=1`
    - `NIVORA_DATABASE_PATH=/home/data/nivora.db`
-   - `NIVORA_PUBLIC_URL=https://TU-APP.azurewebsites.net`
+   - `NIVORA_SMTP_HOST`, `NIVORA_SMTP_USERNAME`, `NIVORA_SMTP_PASSWORD` para los correos.
 5. Monta `/home/data` como carpeta persistente. Para producción con múltiples
    instancias, usa Azure SQL o PostgreSQL en lugar de SQLite.
 
@@ -103,16 +103,20 @@ La interfaz web y la API se sirven desde la misma aplicación FastAPI (`app:app`
 
 ## Recuperación y cambio de contraseña
 
-Ambos flujos envían por correo un enlace de un solo uso (vence según
-`NIVORA_PASSWORD_RESET_TTL`, una hora por defecto):
+Ambos flujos envían por correo un **código de 6 dígitos**. El estudiante lo
+escribe en `/verificar-codigo` junto con su contraseña nueva:
 
 - **Recuperar contraseña** (`/recuperar-contrasena`): para quien no puede
   iniciar sesión. Por seguridad, la respuesta es la misma exista o no la cuenta.
-- **Cambiar contraseña** (`Ajustes`): envía el enlace al correo de la cuenta
+- **Cambiar contraseña** (`Ajustes`): envía el código al correo de la cuenta
   con la sesión iniciada.
 
-Configuración necesaria (copia `.env.example` a `.env` dentro de `Nivora` y
-reinicia Uvicorn):
+Reglas de seguridad: el código vence a los 15 minutos
+(`NIVORA_PASSWORD_RESET_TTL`, en segundos), sirve una sola vez, se bloquea tras
+5 intentos fallidos, pedir uno nuevo invalida el anterior y hay que esperar 60
+segundos entre envíos. En la base de datos solo se guarda un hash del código.
+
+Configuración necesaria:
 
 | Variable | Ejemplo |
 | --- | --- |
@@ -122,12 +126,18 @@ reinicia Uvicorn):
 | `NIVORA_SMTP_PASSWORD` | contraseña de aplicación de Gmail |
 | `NIVORA_SMTP_FROM` | `Nivora <cuenta@gmail.com>` (opcional: por defecto usa el usuario) |
 
-Si falta configuración o el servidor SMTP rechaza el envío, Nivora lo indica en
-pantalla y registra el motivo en la consola; nunca muestra un envío exitoso que
-no ocurrió. En modo desarrollo/pruebas aparece además un enlace de prueba.
+Dónde configurarlas:
 
-Los enlaces de los correos usan `NIVORA_PUBLIC_URL` si está definida; si no,
-el dominio desde el que se hizo la solicitud (incluido el de Codespaces).
+- **GitHub Codespaces (recomendado):** créalas una sola vez en
+  https://github.com/settings/codespaces → *Codespaces secrets*, con acceso a
+  este repositorio, y reinicia el Codespace. Así funcionan en cualquier
+  Codespace nuevo.
+- **Local:** copia `.env.example` a `.env` dentro de `Nivora` y reinicia Uvicorn.
+
+Nunca subas credenciales al repositorio. Si falta configuración o el servidor
+SMTP rechaza el envío, Nivora lo indica en pantalla y registra el motivo en la
+consola; nunca muestra un envío exitoso que no ocurrió. En modo
+desarrollo/pruebas aparece además un código de prueba en pantalla.
 
 ## GitHub Codespaces y proxies
 
@@ -140,9 +150,8 @@ cd Nivora
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-y abre el puerto 8000 desde la pestaña **Puertos**. No configures
-`NIVORA_PUBLIC_URL` con `localhost` ni con una IP local en Codespaces.
+y abre el puerto 8000 desde la pestaña **Puertos**.
 
 Para abrir la aplicación desde otro dispositivo en la red local, configura
-`NIVORA_HOST=0.0.0.0` y, si quieres fijar el dominio de los correos,
-`NIVORA_PUBLIC_URL` con la IP del equipo, por ejemplo `http://192.168.1.20:8000`.
+`NIVORA_HOST=0.0.0.0` y entra con la IP del equipo, por ejemplo
+`http://192.168.1.20:8000`.

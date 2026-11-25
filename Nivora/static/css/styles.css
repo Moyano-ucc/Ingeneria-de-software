@@ -1239,7 +1239,6 @@ nav a:hover,
 .settings-help { color: var(--text-sub); font-size: 0.9rem; margin-top: 0.8rem; }
 .settings-page .form-message { text-align: left; margin-top: 0.8rem; }
 .reset-dev-note { margin: 1rem 0 0.3rem; color: #4a5568; font-size: 0.85rem; }
-.reset-dev-link { overflow-wrap: anywhere; }
 
 @media (prefers-reduced-motion: reduce) {
     html:not(.motion-enabled) *,
@@ -1283,4 +1282,23 @@ nav a:hover,
 .quiz-question label:has(input:checked) {
     color: var(--yellow-primary);
     font-weight: bold;
+}
+
+/* Código de verificación para cambiar la contraseña */
+.code-input {
+    font-family: Consolas, monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.4em;
+    text-align: center;
+}
+
+.resend-form { margin: 0; }
+.link-button {
+    background: none;
+    border: 0;
+    color: var(--yellow-primary);
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
 }

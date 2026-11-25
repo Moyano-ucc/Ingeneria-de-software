@@ -68,26 +68,6 @@ def redirect(url, status_code: int = 302) -> RedirectResponse:
     return RedirectResponse(url=relative_url(url), status_code=status_code)
 
 
-def public_url(request: Request, url) -> str:
-    """Build an absolute URL for links that leave the browser (e-mails).
-
-    Priority: ``NIVORA_PUBLIC_URL`` > proxy headers (``X-Forwarded-Host`` and
-    ``X-Forwarded-Proto``, sent by Codespaces and most proxies) > request URL.
-    """
-    path = relative_url(url)
-    configured = getattr(request.app.state.settings, "PUBLIC_BASE_URL", None)
-    if configured:
-        return f"{configured.rstrip('/')}{path}"
-    forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
-    if forwarded_host:
-        forwarded_proto = (
-            request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
-            or request.url.scheme
-        )
-        return f"{forwarded_proto}://{forwarded_host}{path}"
-    return f"{request.url.scheme}://{request.url.netloc}{path}"
-
-
 def error_page(request: Request, message: str, status_code: int) -> HTMLResponse:
     return render_template(
         request,

@@ -7,7 +7,6 @@ from itsdangerous import TimestampSigner
 
 from app import create_app
 from config import TestingConfig
-from controllers import auth_controller
 from controllers.practica_controller import EJERCICIOS
 from models.ruta_model import RutaModel
 
@@ -251,67 +250,15 @@ def test_post_without_csrf_is_rejected():
     assert response.status_code == 400
 
 
-def test_password_recovery_routes_offer_and_accept_a_dev_reset_link(monkeypatch):
-    class FakeResetService:
-        def create_password_reset(self, email, ttl):
-            assert email == "ana@example.com"
-            assert ttl > 0
-            return "demo-token"
+def test_password_recovery_page_offers_a_code_and_requires_a_pending_request():
+    client = test_client()
 
-        def reset_password(self, token, password):
-            return token == "demo-token" and password == "new-password-123"
+    recovery = client.get("/recuperar-contrasena")
+    without_request = client.get("/verificar-codigo")
 
-        @staticmethod
-        def reset_token_is_valid(token):
-            return token == "demo-token"
-
-        @staticmethod
-        def password_is_strong(password):
-            return (
-                len(password) >= 8
-                and any(character.isalpha() for character in password)
-                and any(character.isdigit() for character in password)
-            )
-
-    monkeypatch.setattr(auth_controller, "auth_service", FakeResetService())
-    class RecoveryTestingConfig(TestingConfig):
-        SMTP_HOST = None
-        PUBLIC_BASE_URL = "http://127.0.0.1:8000"
-
-    app = create_app(RecoveryTestingConfig)
-    client = test_client(app)
-    client.get("/recuperar-contrasena")
-    with client.session_transaction() as session:
-        csrf = session["csrf_token"]
-
-    recovery = client.post(
-        "/recuperar-contrasena",
-        data={"csrf_token": csrf, "email": "ana@example.com"},
-    )
-    # Without SMTP the page must not claim the e-mail was sent; in testing
-    # mode it offers the development link instead.
-    assert recovery.status_code == 503
-    assert "no está configurado" in recovery.text
-    assert "te enviamos un enlace" not in recovery.text
-    assert (
-        b"http://127.0.0.1:8000/restablecer-contrasena/demo-token"
-        in recovery.content
-    )
-
-    client.get("/restablecer-contrasena/demo-token")
-    with client.session_transaction() as session:
-        csrf = session["csrf_token"]
-    reset = client.post(
-        "/restablecer-contrasena/demo-token",
-        data={
-            "csrf_token": csrf,
-            "password": "new-password-123",
-            "confirmacion": "new-password-123",
-        },
-    )
-
-    assert reset.status_code == 200
-    assert "Contraseña actualizada" in reset.text
+    assert "código de 6 dígitos" in recovery.text
+    assert without_request.status_code == 302
+    assert without_request.headers["Location"] == "/recuperar-contrasena"
 
 
 def test_profile_change_password_opens_recovery_with_account_email():

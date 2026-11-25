@@ -61,42 +61,40 @@ class UserRepository:
         finally:
             connection.close()
 
-    def reset_token_is_valid(self, token_hash, now):
-        connection = self.database.connect()
-        try:
-            row = connection.execute(
-                """
-                SELECT 1 FROM PASSWORD_RESET
-                WHERE token_hash = ? AND expires_at > ? AND used_at IS NULL
-                """,
-                (token_hash, now),
-            ).fetchone()
-            return row is not None
-        finally:
-            connection.close()
+    def consume_reset_code(self, user_id, code_hash, password_hash, now, max_attempts):
+        """Check the active code of a user and change the password if it matches.
 
-    def update_password_with_reset(self, token_hash, password_hash, now):
+        Wrong codes increase the attempt counter; after ``max_attempts`` the
+        code stops working and a new one must be requested.
+        """
         connection = self.database.connect()
         try:
             reset = connection.execute(
                 """
-                SELECT id_persona FROM PASSWORD_RESET
-                WHERE token_hash = ? AND expires_at > ? AND used_at IS NULL
+                SELECT token_hash, expires_at, intentos FROM PASSWORD_RESET
+                WHERE id_persona = ? AND used_at IS NULL
                 """,
-                (token_hash, now),
+                (user_id,),
             ).fetchone()
-            if reset is None:
-                return False
+            if reset is None or reset["expires_at"] <= now or reset["intentos"] >= max_attempts:
+                return "expired"
+            if reset["token_hash"] != code_hash:
+                connection.execute(
+                    "UPDATE PASSWORD_RESET SET intentos = intentos + 1 WHERE token_hash = ?",
+                    (reset["token_hash"],),
+                )
+                connection.commit()
+                return "expired" if reset["intentos"] + 1 >= max_attempts else "invalid"
             connection.execute(
                 "UPDATE PERSONA SET contrasena = ? WHERE id_persona = ?",
-                (password_hash, reset["id_persona"]),
+                (password_hash, user_id),
             )
             connection.execute(
                 "UPDATE PASSWORD_RESET SET used_at = ? WHERE token_hash = ?",
-                (now, token_hash),
+                (now, code_hash),
             )
             connection.commit()
-            return True
+            return "ok"
         except Exception:
             connection.rollback()
             raise

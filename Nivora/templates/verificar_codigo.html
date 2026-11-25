@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="auth-card">
+    {% if completado %}
+        <h1>Contraseña actualizada</h1>
+        <p class="form-message form-success" role="status">Tu contraseña se cambió correctamente.{% if not sesion_iniciada %} Ya puedes iniciar sesión con ella.{% endif %}</p>
+        {% if sesion_iniciada %}
+            <a class="btn-yellow" href="{{ url_for('auth.ajustes') }}">Volver a ajustes</a>
+        {% else %}
+            <a class="btn-yellow" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+        {% endif %}
+    {% else %}
+        <h1>Escribe tu código</h1>
+        <p>Enviamos un código de 6 dígitos a <strong>{{ email }}</strong>. Escríbelo aquí y elige tu contraseña nueva.</p>
+
+        {% if feedback and feedback.mensaje %}
+            <p class="form-message {{ 'form-error' if feedback.dev_code else 'form-success' }}" role="status">{{ feedback.mensaje }}</p>
+        {% endif %}
+        {% if feedback and feedback.dev_code %}
+            <p class="reset-dev-note">Modo desarrollo: el correo no se envió. Tu código de prueba es <strong>{{ feedback.dev_code }}</strong>.</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('auth.verificar_codigo') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="codigo">Código de verificación</label>
+                <input id="codigo" class="code-input" type="text" name="codigo" inputmode="numeric" pattern="[0-9 ]*" maxlength="7" autocomplete="one-time-code" placeholder="000000" required aria-invalid="{{ 'true' if field_errors.codigo else 'false' }}" aria-describedby="codigo-error">
+                <small id="codigo-error" class="field-error" role="alert" {% if not field_errors.codigo %}hidden{% endif %}>{{ field_errors.codigo|default('') }}</small>
+            </div>
+            <div class="form-group">
+                <label for="password">Nueva contraseña</label>
+                <input id="password" type="password" name="password" autocomplete="new-password" minlength="8" required aria-invalid="{{ 'true' if field_errors.password else 'false' }}" aria-describedby="password-error">
+                <small id="password-error" class="field-error" role="alert" {% if not field_errors.password %}hidden{% endif %}>{{ field_errors.password|default('Al menos 8 caracteres, con letras y números') }}</small>
+            </div>
+            <div class="form-group">
+                <label for="confirmacion">Confirmar contraseña</label>
+                <input id="confirmacion" type="password" name="confirmacion" autocomplete="new-password" minlength="8" required aria-invalid="{{ 'true' if field_errors.confirmacion else 'false' }}" aria-describedby="confirmacion-error">
+                <small id="confirmacion-error" class="field-error" role="alert" {% if not field_errors.confirmacion %}hidden{% endif %}>{{ field_errors.confirmacion|default('') }}</small>
+            </div>
+            <button class="btn-yellow" type="submit">Cambiar contraseña</button>
+        </form>
+
+        <div class="auth-links">
+            <form method="POST" action="{{ url_for('auth.recuperar_contrasena') }}" class="resend-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="email" value="{{ email }}">
+                <p>{% if codigo_vencido %}Pide un código nuevo:{% else %}¿No te llegó?{% endif %} <button type="submit" class="link-button">Enviar otro código</button></p>
+            </form>
+            <p><a href="{{ url_for('auth.recuperar_contrasena') }}">Usar otro correo</a></p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
