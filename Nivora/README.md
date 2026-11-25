@@ -72,18 +72,31 @@ Configura `NIVORA_SECRET_KEY`, `NIVORA_DATABASE_PATH` y
 `NIVORA_COOKIE_SECURE=1`. Ejecuta `deploy.sh` en Linux con Gunicorn y Uvicorn.
 No actives `NIVORA_DEBUG` en producción.
 
-## Azure App Service
+## Azure App Service (plan gratuito F1 de Azure for Students)
 
-1. Crea un App Service Linux con Python 3.12.
-2. Despliega desde GitHub Actions o Git local.
-3. Configura `bash startup.sh` como comando de inicio.
-4. Agrega estas variables en **Configuración > Configuración de la aplicación**:
-   - `NIVORA_SECRET_KEY`: valor aleatorio largo y privado.
-   - `NIVORA_COOKIE_SECURE=1`
-   - `NIVORA_DATABASE_PATH=/home/data/nivora.db`
-   - `NIVORA_SMTP_HOST`, `NIVORA_SMTP_USERNAME`, `NIVORA_SMTP_PASSWORD` para los correos.
-5. Monta `/home/data` como carpeta persistente. Para producción con múltiples
-   instancias, usa Azure SQL o PostgreSQL en lugar de SQLite.
+Desde la carpeta `Nivora` (por ejemplo, en un Codespace):
+
+```bash
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash   # solo la primera vez
+az login --use-device-code
+bash desplegar_azure.sh nivora-<tu-nombre> eastus2
+```
+
+El script crea (o reutiliza) un App Service Linux con plan **F1 gratuito** y
+Python 3.12. También configura `startup.sh` como comando de inicio, la base de
+datos persistente en `/home/data/nivora.db`, la cookie segura y una
+`NIVORA_SECRET_KEY` aleatoria que se genera una sola vez. Si en el entorno
+existen las variables `NIVORA_SMTP_*` (por ejemplo, como secretos de
+Codespaces), las copia para que funcionen los correos. Publica solo lo que está
+confirmado en git: nunca sube `.env` ni `.venv`. Para actualizar la app,
+vuelve a ejecutar el mismo comando.
+
+Límites del plan F1: la app se duerme tras unos 20 minutos sin visitas (la
+primera carga posterior tarda hasta un minuto), dispone de 60 minutos de CPU
+al día y no permite dominio propio. Si la región no está permitida en tu
+suscripción de estudiante, prueba con otra (`centralus`, `westus2`,
+`brazilsouth`...). SQLite en `/home` es persistente y suficiente para una sola
+instancia; con varias instancias, usa Azure SQL o PostgreSQL.
 
 ## Arquitectura y patrones
 
