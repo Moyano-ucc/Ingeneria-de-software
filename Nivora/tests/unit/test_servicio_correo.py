@@ -32,3 +32,22 @@ def test_email_service_reports_missing_settings_and_uses_ssl_on_port_465():
 
     assert EmailService(Ssl).use_ssl is True
     assert EmailService(SmtpConfig).use_ssl is False
+
+
+def test_testing_config_ignores_smtp_settings_from_the_environment():
+    """Regression: with SMTP secrets in Codespaces, a test sent a real e-mail."""
+    assert EmailService(TestingConfig).missing_settings() == [
+        "NIVORA_SMTP_HOST",
+        "NIVORA_SMTP_USERNAME",
+        "NIVORA_SMTP_PASSWORD",
+        "NIVORA_SMTP_FROM",
+    ]
+
+
+def test_real_smtp_connections_are_blocked_in_tests():
+    import smtplib
+
+    import pytest
+
+    with pytest.raises(AssertionError, match="servidor de correo real"):
+        smtplib.SMTP("smtp.gmail.com", 587)

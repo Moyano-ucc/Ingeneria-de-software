@@ -32,3 +32,9 @@ class TestingConfig(Config):
     TESTING = True
     SECRET_KEY = "test-secret-key"
     SESSION_COOKIE_SECURE = False
+    # Tests never use the real mail server, even if NIVORA_SMTP_* exist in the
+    # environment (for example, as Codespaces secrets).
+    SMTP_HOST = None
+    SMTP_USERNAME = None
+    SMTP_PASSWORD = None
+    SMTP_FROM = None

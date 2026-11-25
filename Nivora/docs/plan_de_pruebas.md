@@ -5,7 +5,7 @@
 | Proyecto | Nivora: plataforma web para aprender Python (FastAPI + Jinja2 + SQLite) |
 | Rama | `Nivorafinal2` |
 | Versión del plan | 1.0, noviembre de 2026 |
-| Estado de la suite | 217 casos automáticos aprobados (100 %), cobertura de líneas de la aplicación del 94,1 % |
+| Estado de la suite | 219 casos automáticos aprobados (100 %), cobertura de líneas de la aplicación del 94,1 % |
 
 ---
 
@@ -86,7 +86,7 @@ Prioridad según el riesgo (sección 12): **A** = alta, **M** = media, **B** = b
 
 | Nivel | Qué se prueba en Nivora | Dónde | Casos | Herramienta |
 |---|---|---|---|---|
-| **Unitarias** | Reglas de `AuthService` con un repositorio falso, evaluación de código y rompecabezas, configuración del correo | `tests/unit/` | 50 | pytest |
+| **Unitarias** | Reglas de `AuthService` con un repositorio falso, evaluación de código y rompecabezas, configuración del correo | `tests/unit/` | 52 | pytest |
 | **Integración** | Servicios y repositorios contra un SQLite real: códigos de recuperación, progreso, certificados, migraciones, concurrencia, contenido del curso | `tests/integration/` | 34 | pytest |
 | **Sistema** | Flujos completos por HTTP como los haría un usuario: registro → lección → quiz → progreso → certificado; contraseñas; API; seguridad; proxy | `tests/system/` | 117 | pytest + TestClient de FastAPI |
 | **Aceptación** | Que Nivora cumpla lo que el equipo espera de una plataforma didáctica | Casos manuales CP (sección 8) y criterios de la sección 13 | 12 | Navegador (opcionalmente grabados con Selenium IDE) |
@@ -192,7 +192,7 @@ Estas técnicas no son decorativas: cada tabla corresponde a pruebas parametriza
 
 | Herramienta | Uso en Nivora | Estado |
 |---|---|---|
-| **pytest** + **TestClient** de FastAPI | Unitarias, integración, sistema, smoke y seguridad | En uso: 217 casos |
+| **pytest** + **TestClient** de FastAPI | Unitarias, integración, sistema, smoke y seguridad | En uso: 219 casos |
 | **pytest-cov** (opcional) | Medir la cobertura: `pip install pytest-cov` y luego `python -m pytest --cov=.` | Medido: 94,1 % |
 | **GitHub Actions** | Smoke y regresión en cada push a `main` y `Nivorafinal2` (`.github/workflows/ci.yml`) | En uso |
 | **Postman / Newman** | `qa/postman/Nivora_API.postman_collection.json`: 9 peticiones con aserciones (estado, contenido, tiempo de respuesta) | Lista. Sus peticiones y estados se verificaron contra la aplicación; falta ejecutarla en Postman o Newman |
@@ -337,13 +337,14 @@ Sesiones de 30 minutos, cada una con un objetivo («charter»). Quien explora an
 - Casos manuales CP-01 a CP-11 ejecutados y aprobados (o con desviaciones aceptadas y registradas).
 - k6 cumple sus umbrales (p95 < 500 ms y menos de 1 % de errores).
 - Cobertura de líneas de la aplicación de al menos 90 %.
+- La suite pasa también en un Codespace con los secretos reales configurados (lección de D-09: probar en un entorno parecido al real).
 - Cada defecto corregido en la versión tiene su prueba de regresión.
 
 **Suspensión:** si el smoke falla, se detiene el resto de las pruebas hasta corregirlo.
 
 | Criterio de salida (versión actual) | Estado |
 |---|---|
-| Pruebas automáticas | ✅ 217/217 |
+| Pruebas automáticas | ✅ 219/219 |
 | Defectos de prioridad alta abiertos | ✅ 0 |
 | Cobertura de la aplicación ≥ 90 % | ✅ 94,1 % |
 | Regresión de cada defecto | ✅ (sección 14) |
@@ -363,6 +364,7 @@ Sesiones de 30 minutos, cada una con un objetivo («charter»). Quien explora an
 | D-06 | Reto final exclusivo de la unidad 2, incoherente con el resto del curso | Revisión de diseño | Duplicaba la lección 4 y bloqueaba la unidad 3 | `0e3f479` | `test_unit_two_uses_the_common_unit_page_without_an_extra_final_challenge` |
 | D-07 | Una unidad podía abrirse con la unidad anterior completada aunque las previas no lo estuvieran | **Tabla de decisión de este plan** | El desbloqueo miraba solo la unidad anterior, no toda la cadena | Entrega de QA | `test_unit_unlocking_decision_table` |
 | D-08 | Con varios usuarios a la vez: errores 500 («duplicate column name») y esperas de hasta 5 s | **Medición de rendimiento de este plan** | La migración del esquema y el contenido se ejecutaban en cada conexión; dos primeras conexiones simultáneas chocaban, y leer el contenido estático en cada petición saturaba el proceso | Entrega de QA: inicialización una vez por proceso, `ALTER` tolerante y caché del contenido | `test_concurrent_first_connections_do_not_collide`, `test_adding_an_existing_column_is_tolerated`, `test_cached_course_content_is_copied_for_each_caller` |
+| D-09 | En un Codespace con los secretos SMTP configurados, una prueba enviaba un correo real y fallaba | Ejecución de la suite en el Codespace del equipo | `TestingConfig` heredaba la configuración SMTP del entorno | `TestingConfig` ignora el SMTP del entorno y `conftest.py` bloquea cualquier conexión SMTP real en las pruebas | `unit/test_servicio_correo.py::test_testing_config_ignores_smtp_settings_from_the_environment`, `test_real_smtp_connections_are_blocked_in_tests` |
 
 Regla del equipo: **ningún defecto se da por corregido sin una prueba que falle antes del arreglo y pase después.** Así la tasa de defectos recurrentes se mantiene en cero y cada sesión exploratoria empieza por estas zonas (EX-5).
 
@@ -396,10 +398,10 @@ Regla del equipo: **ningún defecto se da por corregido sin una prueba que falle
 
 | Métrica | Cómo se obtiene | Valor actual |
 |---|---|---|
-| % de pruebas ejecutadas | Casos ejecutados / casos planificados (automáticos y manuales) | Automáticos: 217/217 (100 %); manuales: pendientes del equipo |
+| % de pruebas ejecutadas | Casos ejecutados / casos planificados (automáticos y manuales) | Automáticos: 219/219 (100 %); manuales: pendientes del equipo |
 | % de pruebas aprobadas / fallidas | Resumen de pytest y de la integración continua | 100 % / 0 % |
 | Cobertura de líneas de la aplicación | `python -m pytest --cov=.` (sin contar `tests/`) | 94,1 % (1.147 líneas, 68 sin ejecutar) |
-| Errores encontrados | Filas del registro de defectos (sección 14) | 8 en total: 6 por QA manual o revisión y 2 por este plan (D-07 y D-08) |
+| Errores encontrados | Filas del registro de defectos (sección 14) | 9 en total: 6 por QA manual o revisión, 2 por las técnicas de este plan (D-07 y D-08) y 1 al ejecutar la suite en un entorno distinto (D-09) |
 | Tiempo promedio de corrección | Fecha del commit de la corrección menos la fecha del reporte | E01–E04, D-05 y D-06: corregidos el mismo día del reporte; D-07 y D-08: el mismo día en que los detectaron las pruebas |
 | Tasa de errores recurrentes | Defectos reabiertos / defectos corregidos | 0 % (cada uno tiene su prueba de regresión) |
 | Rendimiento (p95, errores) | k6 (preliminar: generador en Python) | p95 = 43 ms y 0 % de errores con 20 usuarios |
