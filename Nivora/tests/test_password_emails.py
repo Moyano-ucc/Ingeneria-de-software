@@ -304,3 +304,44 @@ def test_email_service_reports_missing_settings_and_uses_ssl_on_port_465():
 
     assert EmailService(Ssl).use_ssl is True
     assert EmailService(SmtpConfig).use_ssl is False
+
+
+def test_registration_and_reset_share_the_same_live_password_rules():
+    client = test_client(create_app(SmtpConfig))
+    signup = client.get("/registro").text
+    _register(client)
+    _request_code(client)
+    reset = client.get("/verificar-codigo").text
+
+    for page in (signup, reset):
+        assert "data-password-form" in page
+        assert "/static/js/password.js" in page
+        for rule in ("Al menos 8 caracteres", "Al menos una letra", "Al menos un número"):
+            assert rule in page
+
+
+# Equivalence classes and boundary values of the password rule (shared by
+# registration and reset): exactly 7 vs 8 characters, missing letters or digits.
+@pytest.mark.parametrize(
+    "password, accepted",
+    [
+        ("abc1234", False),     # 7 characters: just below the limit
+        ("abcd1234", True),     # 8 characters: on the limit
+        ("abcdefgh", False),    # only letters
+        ("12345678", False),    # only digits
+        ("ñandú2024", True),    # non-ASCII letters count as letters
+        ("", False),            # empty
+    ],
+)
+def test_reset_applies_the_same_password_rule_as_registration(password, accepted):
+    client = test_client(create_app(SmtpConfig))
+    _register(client)
+    _request_code(client)
+
+    response = _submit_code(client, _code_from_last_email(), password)
+
+    if accepted:
+        assert "Contraseña actualizada" in response.text
+    else:
+        assert response.status_code == 400
+        assert "al menos 8 caracteres" in response.text.lower()

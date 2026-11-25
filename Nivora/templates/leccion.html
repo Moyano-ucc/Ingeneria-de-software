@@ -14,7 +14,19 @@
                 <aside class="theory-analogy"><strong>En la vida diaria:</strong> {{ material.analogia }}</aside>
             {% endif %}
 
-            <h3>Ejemplo</h3>
+            {% if material.proyecto %}
+                <div class="theory-project">
+                    <h3>El proyecto</h3>
+                    <p>{{ material.proyecto.enunciado }}</p>
+                    <h4>Requisitos</h4>
+                    <ul>{% for requisito in material.proyecto.requisitos %}<li>{{ requisito }}</li>{% endfor %}</ul>
+                    <h4>Cómo planearlo antes de programar</h4>
+                    <ol>{% for paso in material.proyecto.plan %}<li>{{ paso }}</li>{% endfor %}</ol>
+                </div>
+                <h3>Una solución completa</h3>
+            {% else %}
+                <h3>Ejemplo</h3>
+            {% endif %}
             <pre><code>{{ material.ejemplo }}</code></pre>
 
             {% if material.lineas %}
@@ -110,6 +122,8 @@
                 <a href="{{ url_for('aprender.leccion', lesson_id=resultado.next_lesson.id) }}" class="btn-yellow">Siguiente lección</a>
             {% elif resultado.next_route_id %}
                 <a href="{{ url_for('aprender.ruta', route_id=resultado.next_route_id) }}" class="btn-yellow">Continuar a la unidad {{ resultado.next_route_id }}</a>
+            {% elif resultado.curso_completado %}
+                <a href="{{ url_for('certificado.mostrar') }}" class="btn-yellow">🎓 Obtener mi certificado</a>
             {% else %}
                 <a href="{{ url_for('aprender.mostrar_aprender') }}" class="btn-yellow">Ver mis unidades</a>
             {% endif %}

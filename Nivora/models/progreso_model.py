@@ -1,67 +1,36 @@
+from models.ruta_model import RutaModel
+
+
 class ProgresoModel:
+    """Overall and per-unit progress, derived from the lessons in the database.
+
+    Totals come from the real content, so adding or removing a lesson keeps
+    the percentages and the course completion consistent.
+    """
 
     @staticmethod
-    def obtener_progreso(usuario_id=None, actividades=None):
-        actividades = actividades or {}
-        unit_one_ids = ("variables", "operadores", "entrada_salida", "repaso_fundamentos")
-        unit_two_ids = ("condicionales", "while", "for", "control_rompecabezas")
-        unit_three_ids = ("listas", "estructuras", "recorrido", "proyecto_estructuras")
-        unit_four_ids = ("funciones", "parametros", "alcance", "proyecto_final")
-        def count(ids):
-            return sum(
-                int(
-                    data.get("completada", False)
-                    if isinstance(data, dict)
-                    else bool(data)
-                )
-                for data in (actividades.get(key, {}) for key in ids)
-            )
+    def _percentage(completed, total):
+        return round(completed / total * 100) if total else 0
 
-        variables_completadas = count(unit_one_ids)
-        unit_two_lessons_completed = count(unit_two_ids)
-        puzzle_completed = int(
-            actividades.get("unidad_02_puzzle", {}).get("completada", False)
-            if isinstance(actividades.get("unidad_02_puzzle", {}), dict)
-            else bool(actividades.get("unidad_02_puzzle", False))
-        )
-        unit_two_completed = min(unit_two_lessons_completed + puzzle_completed, 5)
-        unit_three_completed = count(unit_three_ids)
-        unit_four_completed = count(unit_four_ids)
-        general_completadas = variables_completadas + unit_two_completed + unit_three_completed + unit_four_completed
-        general_completadas = min(general_completadas, 17)
-        total = 17
-
+    @classmethod
+    def obtener_progreso(cls, usuario_id=None, actividades=None):
+        rutas = RutaModel.obtener_rutas(actividades or {})
+        completadas = sum(ruta["completadas"] for ruta in rutas)
+        total = sum(ruta["total"] for ruta in rutas)
         return {
             "general": {
-                "completadas": general_completadas,
+                "completadas": completadas,
                 "total": total,
-                "porcentaje": round(general_completadas / total * 100)
+                "porcentaje": cls._percentage(completadas, total),
             },
-
             "rutas": [
                 {
-                    "nombre": "Fundamentos de Python",
-                    "completadas": variables_completadas,
-                    "total": 4,
-                    "porcentaje": round(variables_completadas / 4 * 100)
-                },
-                {
-                    "nombre": "Control de flujo",
-                    "completadas": unit_two_completed,
-                    "total": 5,
-                    "porcentaje": round(unit_two_completed / 5 * 100)
-                },
-                {
-                    "nombre": "Listas y estructuras",
-                    "completadas": unit_three_completed,
-                    "total": 4,
-                    "porcentaje": round(unit_three_completed / 4 * 100)
-                },
-                {
-                    "nombre": "Funciones",
-                    "completadas": unit_four_completed,
-                    "total": 4,
-                    "porcentaje": round(unit_four_completed / 4 * 100)
+                    "nombre": ruta["nombre"],
+                    "completadas": ruta["completadas"],
+                    "total": ruta["total"],
+                    "porcentaje": cls._percentage(ruta["completadas"], ruta["total"]),
                 }
-            ]
+                for ruta in rutas
+            ],
+            "curso_completado": total > 0 and completadas == total,
         }

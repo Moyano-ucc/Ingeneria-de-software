@@ -1,4 +1,3 @@
-import json
 import random
 
 from fastapi import APIRouter, Request
@@ -37,114 +36,30 @@ async def mostrar_aprender(request: Request):
     )
 
 
-@aprender_router.api_route(
-    "/aprender/ruta/{route_id}",
-    methods=["GET", "POST"],
-    name="aprender.ruta",
-)
+@aprender_router.get("/aprender/ruta/{route_id}", name="aprender.ruta")
 async def ruta(request: Request, route_id: str):
     if "usuario" not in request.session:
         return redirect(request.url_for("auth.login"))
 
     actividades = request.session.get("progreso", {})
-    if route_id == "02":
-        if not RutaModel.unidad_dos_desbloqueada(actividades):
-            return redirect(request.url_for("aprender.mostrar_aprender"))
-
-        lessons = [
-            lesson
-            for lesson in RutaModel.obtener_lecciones()
-            if lesson["unit_id"] == 2
-        ]
-        normalized_activities = _normalize_activities(actividades)
-        if request.method == "POST":
-            form = await request.form()
-            try:
-                selected_ids = json.loads(form.get("sequence", "[]"))
-            except (TypeError, json.JSONDecodeError):
-                selected_ids = []
-            valid_ids = {piece["id"] for piece in RutaModel.PUZZLE_PIECES}
-            if not isinstance(selected_ids, list):
-                selected_ids = []
-            selected_ids = list(
-                dict.fromkeys(
-                    piece_id
-                    for piece_id in selected_ids
-                    if isinstance(piece_id, str) and piece_id in valid_ids
-                )
-            )
-            valid_sequence = (
-                len(selected_ids) == len(valid_ids)
-                and set(selected_ids) == valid_ids
-            )
-            completada = valid_sequence and selected_ids == RutaModel.PUZZLE_SOLUTION
-            activity = {
-                "completada": completada,
-                "intentada": True,
-                "puntuacion": int(completada),
-                "total": 1,
-            }
-            actividades["unidad_02_puzzle"] = activity
-            request.session["progreso"] = actividades
-            progress_repository.save_activity(
-                request.session["usuario"].get("id_persona"),
-                "unidad_02_puzzle",
-                activity,
-            )
-            request.session["puzzle_feedback"] = {
-                "resultado": "correcto" if completada else "incorrecto",
-                "selected_ids": selected_ids,
-            }
-            return redirect(
-                request.url_for("aprender.ruta", route_id="02"),
-                status_code=303,
-            )
-
-        feedback = request.session.pop("puzzle_feedback", None)
-        resultado = None
-        selected_ids = []
-        if isinstance(feedback, dict):
-            resultado = feedback.get("resultado")
-            selected_ids = feedback.get("selected_ids", [])
-            if not isinstance(selected_ids, list):
-                selected_ids = []
-
-        siguiente_unidad_desbloqueada = any(
-            item["id"] == "03" and item["desbloqueada"]
-            for item in RutaModel.obtener_rutas(actividades)
-        )
-        return render_template(
-            request,
-            "unidad_dos.html",
-            pieces=RutaModel.PUZZLE_PIECES,
-            lecciones=lessons,
-            actividades=normalized_activities,
-            selected_ids=selected_ids,
-            resultado=resultado,
-            siguiente_unidad_desbloqueada=siguiente_unidad_desbloqueada,
-        )
-
-    if route_id not in {"01", "03", "04"}:
-        return redirect(request.url_for("aprender.mostrar_aprender"))
-    unit_number = int(route_id)
-    lecciones = [
-        lesson
-        for lesson in RutaModel.obtener_lecciones()
-        if lesson["unit_id"] == unit_number
-    ]
     rutas = RutaModel.obtener_rutas(actividades)
-    ruta_actual = next((item for item in rutas if item["id"] == route_id), None)
-    if ruta_actual is None or not ruta_actual["desbloqueada"]:
+    index = next((i for i, item in enumerate(rutas) if item["id"] == route_id), None)
+    if index is None or not rutas[index]["desbloqueada"]:
         return redirect(request.url_for("aprender.mostrar_aprender"))
 
-    normalized_activities = _normalize_activities(actividades)
+    siguiente = rutas[index + 1] if index + 1 < len(rutas) else None
     return render_template(
         request,
         "ruta.html",
         ruta_id=route_id,
-        ruta=ruta_actual,
-        lecciones=lecciones,
-        actividades=normalized_activities,
+        ruta=rutas[index],
+        lecciones=[
+            lesson
+            for lesson in RutaModel.obtener_lecciones()
+            if lesson["unit_id"] == int(route_id)
+        ],
+        actividades=_normalize_activities(actividades),
+        siguiente_ruta=siguiente if siguiente and siguiente["desbloqueada"] else None,
     )
 
 
@@ -171,13 +86,15 @@ def _next_step(lesson, actividades):
     )
     next_route_id = None
     if next_lesson is None:
-        puzzle_completed = RutaModel.actividad_completada(
-            actividades.get("unidad_02_puzzle", {})
+        next_route = next(
+            (
+                route
+                for route in RutaModel.obtener_rutas(actividades)
+                if int(route["id"]) == lesson["unit_id"] + 1 and route["desbloqueada"]
+            ),
+            None,
         )
-        if lesson["unit_id"] == 2 and not puzzle_completed:
-            next_route_id = "02"
-        elif lesson["unit_id"] < 4:
-            next_route_id = f"{lesson['unit_id'] + 1:02d}"
+        next_route_id = next_route["id"] if next_route else None
     return next_lesson, next_route_id
 
 
@@ -211,6 +128,10 @@ def _build_result(lesson, answers, actividades):
         ),
         "next_lesson": next_lesson,
         "next_route_id": next_route_id,
+        "curso_completado": completada and all(
+            route["completadas"] == route["total"]
+            for route in RutaModel.obtener_rutas(actividades)
+        ),
     }
 
 
@@ -248,11 +169,13 @@ async def leccion(request: Request, lesson_id: str):
     # start a new attempt (it is recorded only when the student submits it).
     repetir = request.query_params.get("repetir") == "1"
     answers = None if repetir else _last_answers(request, lesson_id)
-    resultado = (
-        _build_result(lesson, answers, actividades)
-        if answers and len(answers) == len(lesson["answers"])
-        else None
+    # A stored attempt is shown only if it still matches the current quiz
+    # (questions can be updated after an attempt was saved).
+    answers_match_quiz = bool(answers) and len(answers) == len(lesson["answers"]) and all(
+        answer in {value for value, _label in options}
+        for answer, (_question, options) in zip(answers, lesson["questions"])
     )
+    resultado = _build_result(lesson, answers, actividades) if answers_match_quiz else None
     return render_template(
         request,
         "leccion.html",

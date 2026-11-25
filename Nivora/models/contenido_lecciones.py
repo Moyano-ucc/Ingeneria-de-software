@@ -9,6 +9,7 @@ Every entry follows the same structure so the template can render it:
 - ``salida``: what the example prints (``entrada`` shows typed input, if any).
 - ``errores``: common mistakes with the reason and the fix.
 - ``reto``: a "what does it print?" question; the answer is revealed on demand.
+- ``proyecto`` (optional): brief, requirements and plan of a project lesson.
 """
 
 LESSON_MATERIAL = {
@@ -545,36 +546,70 @@ LESSON_MATERIAL = {
     },
     "proyecto_final": {
         "explicacion": (
-            "Un programa bien organizado se divide en funciones pequeñas, cada una "
-            "con una sola tarea: una calcula, otra presenta el resultado. Así es "
-            "más fácil probar cada parte, encontrar errores y reutilizar código. "
-            "Este proyecto combina todo lo aprendido: variables, listas, ciclos y "
-            "funciones."
+            "En este proyecto construirás un programa completo: un boletín de "
+            "calificaciones. Para resolverlo usarás todo lo que aprendiste en el "
+            "curso: variables y operadores (unidad 1), condicionales y ciclos "
+            "(unidad 2), listas y diccionarios (unidad 3) y funciones (unidad 4). "
+            "La clave es dividir el problema en partes pequeñas y resolver cada "
+            "una con una función."
         ),
         "analogia": (
-            "Como una cocina con estaciones: una persona corta, otra cocina y otra "
-            "sirve. Cada una hace bien su parte."
+            "Es lo que hace un profesor al cerrar el periodo: tiene las notas de "
+            "cada estudiante, calcula su promedio, decide si aprobó y entrega un "
+            "boletín con el resultado."
         ),
-        "ejemplo": "def calcular_promedio(notas):\n    return sum(notas) / len(notas)\n\ndef mostrar_resultado(nombre, notas):\n    promedio = calcular_promedio(notas)\n    print(f'{nombre}: {promedio:.1f}')\n\nmostrar_resultado('Ana', [8, 9, 10])",
+        "proyecto": {
+            "enunciado": (
+                "Escribe un programa que reciba las notas de varios estudiantes y "
+                "muestre, para cada uno, su promedio con un decimal y su "
+                "clasificación."
+            ),
+            "requisitos": [
+                "Guardar a cada estudiante con su lista de notas en un diccionario.",
+                "Crear una función calcular_promedio(notas) que devuelva el promedio.",
+                "Crear una función clasificar(promedio) que devuelva «Excelente» (9 o más), «Aprobado» (6 o más) o «Debe repasar».",
+                "Recorrer el diccionario con un ciclo for y mostrar una línea por estudiante.",
+            ],
+            "plan": [
+                "Datos: ¿cómo guardo los estudiantes y sus notas? → un diccionario de listas.",
+                "Cálculo: ¿qué se repite para cada estudiante? → el promedio, en una función.",
+                "Decisión: ¿cómo elijo el mensaje? → if, elif y else dentro de otra función.",
+                "Resultado: recorro el diccionario y muestro cada línea con una f-string.",
+            ],
+        },
+        "ejemplo": "def calcular_promedio(notas):\n    return sum(notas) / len(notas)\n\ndef clasificar(promedio):\n    if promedio >= 9:\n        return 'Excelente'\n    elif promedio >= 6:\n        return 'Aprobado'\n    else:\n        return 'Debe repasar'\n\nestudiantes = {'Ana': [9, 10, 8], 'Luis': [6, 5, 7], 'Sofía': [4, 6, 5]}\n\nfor nombre, notas in estudiantes.items():\n    promedio = calcular_promedio(notas)\n    print(f'{nombre}: {promedio:.1f} - {clasificar(promedio)}')",
         "lineas": [
-            ("def calcular_promedio(notas):", "Función que solo calcula."),
-            ("    return sum(notas) / len(notas)", "Devuelve el promedio."),
-            ("def mostrar_resultado(nombre, notas):", "Función que presenta el resultado."),
-            ("    promedio = calcular_promedio(notas)", "Reutiliza la función anterior."),
-            ("    print(f'{nombre}: {promedio:.1f}')", ":.1f muestra el número con un decimal."),
+            ("def calcular_promedio(notas):", "Unidad 4: una función con una sola tarea, calcular."),
+            ("    return sum(notas) / len(notas)", "Unidad 3: sum y len trabajan sobre la lista de notas."),
+            ("def clasificar(promedio):", "Una segunda función, solo para decidir el mensaje."),
+            ("    if promedio >= 9: ... elif ... else:", "Unidad 2: las condiciones se revisan en orden, de la más exigente a la menos."),
+            ("estudiantes = {'Ana': [9, 10, 8], ...}", "Unidad 3: cada clave es un nombre y su valor, una lista de notas."),
+            ("for nombre, notas in estudiantes.items():", "Unidad 2 y 3: recorre cada par nombre–notas."),
+            ("    promedio = calcular_promedio(notas)", "Se reutiliza la función con las notas de cada estudiante."),
+            ("    print(f'{nombre}: {promedio:.1f} - ...')", "Unidad 1: f-string; :.1f muestra un decimal."),
         ],
-        "salida": "Ana: 9.0",
+        "salida": "Ana: 9.0 - Excelente\nLuis: 6.0 - Aprobado\nSofía: 5.0 - Debe repasar",
         "errores": [
             {
                 "codigo": "def calcular_promedio(notas):\n    print(sum(notas) / len(notas))",
-                "problema": "Con print en lugar de return, otras funciones no pueden usar el resultado.",
+                "problema": "Con print la función muestra el número pero devuelve None, y clasificar(None) falla.",
                 "correccion": "    return sum(notas) / len(notas)",
+            },
+            {
+                "codigo": "if promedio >= 6:\n    return 'Aprobado'\nelif promedio >= 9:\n    return 'Excelente'",
+                "problema": "Un 9.5 también cumple >= 6, así que nunca llegaría a «Excelente». El orden de las condiciones importa.",
+                "correccion": "Revisa primero la condición más exigente (>= 9).",
+            },
+            {
+                "codigo": "for nombre in estudiantes:\n    promedio = calcular_promedio(nombre)",
+                "problema": "Recorrer el diccionario sin .items() entrega solo las claves (los nombres), no las notas.",
+                "correccion": "for nombre, notas in estudiantes.items():",
             },
         ],
         "reto": {
-            "codigo": "def maximo(numeros):\n    mayor = numeros[0]\n    for n in numeros:\n        if n > mayor:\n            mayor = n\n    return mayor\n\nprint(maximo([3, 9, 4]))",
-            "respuesta": "9",
-            "explicacion": "La función recorre la lista y guarda el número más grande que encuentra.",
+            "codigo": "def clasificar(promedio):\n    if promedio >= 9:\n        return 'Excelente'\n    elif promedio >= 6:\n        return 'Aprobado'\n    return 'Debe repasar'\n\nnotas = [10, 8, 9]\nprint(clasificar(sum(notas) / len(notas)))",
+            "respuesta": "Excelente",
+            "explicacion": "El promedio de 10, 8 y 9 es 9.0; cumple la primera condición (>= 9), así que devuelve «Excelente».",
         },
     },
 }

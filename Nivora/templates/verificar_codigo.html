@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from '_password_rules.html' import password_rules %}
 
 {% block content %}
 <section class="auth-card">
@@ -21,7 +22,7 @@
             <p class="reset-dev-note">Modo desarrollo: el correo no se envió. Tu código de prueba es <strong>{{ feedback.dev_code }}</strong>.</p>
         {% endif %}
 
-        <form method="POST" action="{{ url_for('auth.verificar_codigo') }}">
+        <form method="POST" action="{{ url_for('auth.verificar_codigo') }}" data-password-form>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="codigo">Código de verificación</label>
@@ -30,11 +31,12 @@
             </div>
             <div class="form-group">
                 <label for="password">Nueva contraseña</label>
-                <input id="password" type="password" name="password" autocomplete="new-password" minlength="8" required aria-invalid="{{ 'true' if field_errors.password else 'false' }}" aria-describedby="password-error">
-                <small id="password-error" class="field-error" role="alert" {% if not field_errors.password %}hidden{% endif %}>{{ field_errors.password|default('Al menos 8 caracteres, con letras y números') }}</small>
+                <input id="password" type="password" name="password" autocomplete="new-password" minlength="8" required aria-invalid="{{ 'true' if field_errors.password else 'false' }}" aria-describedby="password-rules password-error">
+                <div id="password-rules">{{ password_rules() }}</div>
+                <small id="password-error" class="field-error" role="alert" {% if not field_errors.password %}hidden{% endif %}>{{ field_errors.password|default('') }}</small>
             </div>
             <div class="form-group">
-                <label for="confirmacion">Confirmar contraseña</label>
+                <label for="confirmacion">Confirma tu contraseña</label>
                 <input id="confirmacion" type="password" name="confirmacion" autocomplete="new-password" minlength="8" required aria-invalid="{{ 'true' if field_errors.confirmacion else 'false' }}" aria-describedby="confirmacion-error">
                 <small id="confirmacion-error" class="field-error" role="alert" {% if not field_errors.confirmacion %}hidden{% endif %}>{{ field_errors.confirmacion|default('') }}</small>
             </div>
@@ -51,4 +53,5 @@
         </div>
     {% endif %}
 </section>
+<script src="{{ url_for('static', filename='js/password.js') }}"></script>
 {% endblock %}

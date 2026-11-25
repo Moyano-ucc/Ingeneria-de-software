@@ -54,6 +54,12 @@ class DatabaseConnection:
                 total INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (id_persona, leccion_id)
             );
+            CREATE TABLE IF NOT EXISTS CERTIFICADO (
+                id_persona INTEGER PRIMARY KEY,
+                codigo TEXT NOT NULL UNIQUE,
+                fecha_emision REAL NOT NULL,
+                FOREIGN KEY (id_persona) REFERENCES PERSONA(id_persona) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS UNIDAD (
                 id_unidad INTEGER PRIMARY KEY,
                 nombre TEXT NOT NULL,
@@ -142,10 +148,19 @@ class DatabaseConnection:
             (13, "Funciones básicas", "Crea funciones reutilizables.", 1, 4, "funciones"),
             (14, "Parámetros y retorno", "Envía valores y devuelve resultados.", 2, 4, "parametros"),
             (15, "Alcance de variables", "Comprende variables locales y globales.", 3, 4, "alcance"),
-            (16, "Proyecto final", "Construye un programa completo con funciones.", 4, 4, "proyecto_final"),
+            (16, "Proyecto final", "Construye un boletín de calificaciones que combina todo el curso.", 4, 4, "proyecto_final"),
         ]
+        # Lesson rows are course content, so they are refreshed when the text
+        # changes (student progress lives in PROGRESO_LECCION and is untouched).
         connection.executemany(
-            "INSERT OR IGNORE INTO LECCION (id_leccion, titulo, contenido, numero, id_unidad, codigo) VALUES (?, ?, ?, ?, ?, ?)",
+            """
+            INSERT INTO LECCION (id_leccion, titulo, contenido, numero, id_unidad, codigo)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id_leccion) DO UPDATE SET
+                titulo = excluded.titulo,
+                contenido = excluded.contenido
+            WHERE titulo IS NOT excluded.titulo OR contenido IS NOT excluded.contenido
+            """,
             lessons,
         )
 
@@ -273,9 +288,9 @@ class DatabaseConnection:
                 ("¿Dónde existe normalmente una variable local?", "funcion", [("funcion", "Dentro de su función"), ("todo_programa", "En todo el programa"), ("siguiente_linea", "Solo en la siguiente línea"), ("llamada", "Solo durante la llamada")]),
             ],
             16: [
-                ("¿Qué ayuda a reutilizar una parte del proyecto?", "funcion", [("funcion", "Una función"), ("comentario", "Un comentario"), ("variable", "Una variable"), ("bucle", "Un bucle")]),
-                ("¿Qué instrucción entrega el cálculo al resto del programa?", "return", [("return", "return"), ("break", "break"), ("print", "print"), ("continue", "continue")]),
-                ("¿Qué mejora la organización de un proyecto final?", "separar", [("separar", "Separar tareas en funciones pequeñas"), ("mezclar", "Escribir todo en un solo bloque"), ("variables", "Crear más variables"), ("comentarios", "Agregar comentarios a cada línea")]),
+                ("En el boletín, ¿qué devuelve clasificar(7.5)?", "Aprobado", [("Aprobado", "'Aprobado'"), ("Excelente", "'Excelente'"), ("Debe repasar", "'Debe repasar'"), ("7.5", "7.5")]),
+                ("¿Qué entrega cada vuelta de for nombre, notas in estudiantes.items()?", "par", [("par", "Un estudiante y su lista de notas"), ("nombres", "Solo el nombre del estudiante"), ("nota", "Una sola nota"), ("todo", "El diccionario completo")]),
+                ("¿Por qué calcular_promedio usa return en lugar de print?", "reutilizar", [("reutilizar", "Para usar el resultado en clasificar y en el print"), ("rapidez", "Porque return es más rápido que print"), ("obligatorio", "Porque una función no puede usar print"), ("mostrar", "Para mostrar el promedio dos veces")]),
             ],
         }
         for lesson_id, questions in lesson_quizzes.items():

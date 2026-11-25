@@ -11,6 +11,7 @@ from api_routes import api_router
 from config import Config
 from controllers.aprender_controller import aprender_router
 from controllers.auth_controller import auth_router
+from controllers.certificado_controller import certificado_router
 from controllers.practica_controller import practica_router
 from controllers.progreso_controller import progreso_router
 from errors.handlers import register_error_handlers
@@ -70,6 +71,7 @@ def create_app(config_object=Config) -> FastAPI:
     app.include_router(aprender_router)
     app.include_router(practica_router)
     app.include_router(progreso_router)
+    app.include_router(certificado_router)
     app.include_router(api_router)
     app.mount(
         "/static",

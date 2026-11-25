@@ -35,6 +35,11 @@
         {% endfor %}
     </div>
 
-    <a href="{{ url_for('aprender.mostrar_aprender') }}" class="text-link">Volver a unidades</a>
+    <div class="route-footer">
+        <a href="{{ url_for('aprender.mostrar_aprender') }}" class="text-link">Volver a unidades</a>
+        {% if siguiente_ruta %}
+            <a href="{{ url_for('aprender.ruta', route_id=siguiente_ruta.id) }}" class="btn-yellow">Continuar a la unidad {{ siguiente_ruta.id }}</a>
+        {% endif %}
+    </div>
 </section>
 {% endblock %}

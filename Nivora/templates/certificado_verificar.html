@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="auth-card">
+    <h1>Verificar certificado</h1>
+    {% if certificado %}
+        <p class="form-message form-success" role="status">Certificado válido.</p>
+        <p><strong>{{ certificado.nombre }}</strong> completó el curso <strong>Aprende Python con Nivora</strong>.</p>
+        <p>Fecha de emisión: {{ fecha }}<br>Código: {{ certificado.codigo }}</p>
+    {% else %}
+        <p class="form-message form-error" role="alert">No encontramos ningún certificado con el código «{{ codigo }}».</p>
+        <p>Revisa que el código esté escrito exactamente como aparece en el certificado.</p>
+    {% endif %}
+</section>
+{% endblock %}

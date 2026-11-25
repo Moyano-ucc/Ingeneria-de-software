@@ -542,106 +542,74 @@ def test_unit_two_stays_locked_until_all_first_unit_lessons_are_complete():
     assert response.headers["Location"].endswith("/aprender")
 
 
-def test_unit_two_puzzle_unlocks_and_saves_a_correct_solution():
+def test_unit_two_uses_the_common_unit_page_without_an_extra_final_challenge():
     client = test_client()
-    client.get("/login")
-    with client.session_transaction() as session:
-        session["usuario"] = {"nombre": "Ana"}
-        session["progreso"] = {
-            lesson_id: {"completada": True}
-            for lesson_id in ("variables", "operadores", "entrada_salida", "repaso_fundamentos")
-        }
-        csrf = session["csrf_token"]
-
-    page = client.get("/aprender/ruta/02")
-    assert page.status_code == 200
-    assert b"Bloques disponibles" in page.content
-
-    partial = client.post(
-        "/aprender/ruta/02",
-        data={
-            "csrf_token": csrf,
-            "sequence": json.dumps(["number", "positive"]),
-        },
-    )
-    partial_page = client.get(partial.headers["Location"])
-    assert partial.status_code == 303
-    assert b'["number", "positive"]' in partial_page.content
-
-    with client.session_transaction() as session:
-        csrf = session["csrf_token"]
-    response = client.post(
-        "/aprender/ruta/02",
-        data={"csrf_token": csrf, "sequence": json.dumps(RutaModel.PUZZLE_SOLUTION)},
-    )
-
-    assert response.status_code == 303
-    result = client.get(response.headers["Location"])
-    assert b"Completaste el rompecabezas" in result.content
-    with client.session_transaction() as session:
-        assert session["progreso"]["unidad_02_puzzle"]["completada"] is True
-
-
-def test_unit_two_route_shows_its_lessons_and_locks_unit_three():
-    client = test_client()
-    client.get("/login")
     with client.session_transaction() as session:
         session["usuario"] = {"id_persona": 1, "nombre": "Ana"}
-        session["progreso"] = {
-            lesson_id: {"completada": True}
-            for lesson_id in (
-                "variables",
-                "operadores",
-                "entrada_salida",
-                "repaso_fundamentos",
-            )
-        }
+        session["progreso"] = {lesson_id: {"completada": True} for lesson_id in ("variables", "operadores", "entrada_salida", "repaso_fundamentos")}
 
     unit_two = client.get("/aprender/ruta/02")
     locked_lesson = client.get("/aprender/leccion/listas")
 
     assert unit_two.status_code == 200
-    assert b"Condicionales" in unit_two.content
-    assert b"Ciclos while" in unit_two.content
-    assert b"Bloques disponibles" in unit_two.content
+    assert "Condicionales" in unit_two.text and "Ciclos while" in unit_two.text
+    assert "Reto final" not in unit_two.text
+    assert "Bloques disponibles" not in unit_two.text
+    assert "Continuar a la unidad 03" not in unit_two.text
     assert locked_lesson.status_code == 302
     assert locked_lesson.headers["Location"].endswith("/aprender")
+    # The route no longer accepts the old puzzle submission.
+    assert client.post("/aprender/ruta/02").status_code == 405
 
 
-def test_completing_unit_two_unlocks_unit_three():
+def test_unit_two_lessons_can_be_reviewed_once_completed():
+    """Regression: unit 2 had its own template without the «Repasar» button."""
     client = test_client()
-    client.get("/login")
     with client.session_transaction() as session:
         session["usuario"] = {"id_persona": 1, "nombre": "Ana"}
         session["progreso"] = {
-            lesson_id: {"completada": True}
-            for lesson_id in (
-                "variables",
-                "operadores",
-                "entrada_salida",
-                "repaso_fundamentos",
-                "condicionales",
-                "while",
-                "for",
-                "control_rompecabezas",
-            )
+            lesson_id: {"completada": True} for lesson_id in ("variables", "operadores", "entrada_salida", "repaso_fundamentos") + ("condicionales", "while", "for", "control_rompecabezas")
         }
-        csrf = session["csrf_token"]
 
-    puzzle = client.post(
-        "/aprender/ruta/02",
-        data={
-            "csrf_token": csrf,
-            "sequence": json.dumps(RutaModel.PUZZLE_SOLUTION),
-        },
-    )
-    puzzle_page = client.get(puzzle.headers["Location"])
+    unit_two = client.get("/aprender/ruta/02").text
+
+    for lesson_id in ("condicionales", "while", "for", "control_rompecabezas"):
+        assert f"/aprender/leccion/{lesson_id}?repetir=1" in unit_two
+    assert unit_two.count(">Repasar</a>") == 4
+    review = client.get("/aprender/leccion/condicionales?repetir=1")
+    assert review.status_code == 200
+    assert "Evaluar quiz" in review.text
+
+
+def test_completing_unit_two_lessons_unlocks_unit_three():
+    client = test_client()
+    with client.session_transaction() as session:
+        session["usuario"] = {"id_persona": 1, "nombre": "Ana"}
+        session["progreso"] = {
+            lesson_id: {"completada": True} for lesson_id in ("variables", "operadores", "entrada_salida", "repaso_fundamentos") + ("condicionales", "while", "for", "control_rompecabezas")
+        }
+
+    unit_two = client.get("/aprender/ruta/02")
     unit_three = client.get("/aprender/ruta/03")
 
-    assert puzzle.status_code == 303
-    assert b"Continuar a unidad 03" in puzzle_page.content
+    assert "Continuar a la unidad 03" in unit_two.text
     assert unit_three.status_code == 200
-    assert b"Listas" in unit_three.content
+    assert "Listas" in unit_three.text
+
+
+def test_old_unit_two_puzzle_progress_is_kept_but_ignored():
+    client = test_client()
+    with client.session_transaction() as session:
+        session["usuario"] = {"id_persona": 1, "nombre": "Ana"}
+        session["progreso"] = {
+            **{lesson_id: {"completada": True} for lesson_id in ("variables", "operadores", "entrada_salida", "repaso_fundamentos")},
+            "unidad_02_puzzle": {"completada": True},
+        }
+
+    progress = client.get("/progreso").text
+
+    assert "4/16" in progress or "25%" in progress
+    assert client.get("/aprender/ruta/03").status_code == 302
 
 
 def test_failed_lesson_does_not_unlock_the_next_lesson():
