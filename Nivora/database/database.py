@@ -1,28 +1,59 @@
 import json
 import os
 import sqlite3
+import threading
 
 
 class DatabaseConnection:
+    # The schema and course content are prepared once per database file and
+    # process. Running it on every connection was slow and, with concurrent
+    # first requests, two migrations could collide ("duplicate column name").
+    initialized_paths = set()
+    _init_lock = threading.Lock()
+
     def __init__(self, db_type="sqlite", config=None):
         self.db_type = db_type
         self.config = config or {}
+
+    def path(self):
+        """Absolute path of the SQLite file this connection uses."""
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.abspath(
+            self.config.get("database_path")
+            or os.environ.get(
+                "NIVORA_DATABASE_PATH",
+                os.path.join(base_dir, "database", "nivora.db"),
+            )
+        )
 
     def connect(self):
         if self.db_type != "sqlite":
             raise ValueError("Tipo de base de datos no soportado")
 
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        database = self.config.get("database_path") or os.environ.get(
-            "NIVORA_DATABASE_PATH",
-            os.path.join(base_dir, "database", "nivora.db"),
-        )
+        database = self.path()
         parent_directory = os.path.dirname(os.path.abspath(database))
         os.makedirs(parent_directory, exist_ok=True)
         connection = sqlite3.connect(database, timeout=10)
         connection.row_factory = sqlite3.Row
-        self._initialize_schema(connection)
+        key = database
+        if key not in self.initialized_paths:
+            with self._init_lock:
+                if key not in self.initialized_paths:
+                    self._initialize_schema(connection)
+                    self.initialized_paths.add(key)
         return connection
+
+    @staticmethod
+    def _add_column(connection, table, column, definition):
+        """Add a column if it is missing (tolerates another process adding it)."""
+        columns = {row["name"] for row in connection.execute(f"PRAGMA table_info({table})")}
+        if column in columns:
+            return
+        try:
+            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        except sqlite3.OperationalError as error:
+            if "duplicate column" not in str(error):
+                raise
 
     @staticmethod
     def _initialize_schema(connection):
@@ -92,34 +123,14 @@ class DatabaseConnection:
             );
             """
         )
-        lesson_columns = {
-            row["name"]
-            for row in connection.execute("PRAGMA table_info(LECCION)").fetchall()
-        }
-        if "codigo" not in lesson_columns:
-            connection.execute("ALTER TABLE LECCION ADD COLUMN codigo TEXT")
-        progress_columns = {
-            row["name"]
-            for row in connection.execute(
-                "PRAGMA table_info(PROGRESO_LECCION)"
-            ).fetchall()
-        }
-        if "intentos" not in progress_columns:
-            connection.execute(
-                "ALTER TABLE PROGRESO_LECCION ADD COLUMN intentos INTEGER NOT NULL DEFAULT 0"
-            )
-        reset_columns = {
-            row["name"]
-            for row in connection.execute("PRAGMA table_info(PASSWORD_RESET)").fetchall()
-        }
-        if "intentos" not in reset_columns:
-            connection.execute(
-                "ALTER TABLE PASSWORD_RESET ADD COLUMN intentos INTEGER NOT NULL DEFAULT 0"
-            )
-        if "respuestas" not in progress_columns:
-            connection.execute(
-                "ALTER TABLE PROGRESO_LECCION ADD COLUMN respuestas TEXT"
-            )
+        DatabaseConnection._add_column(connection, "LECCION", "codigo", "TEXT")
+        DatabaseConnection._add_column(
+            connection, "PROGRESO_LECCION", "intentos", "INTEGER NOT NULL DEFAULT 0"
+        )
+        DatabaseConnection._add_column(connection, "PROGRESO_LECCION", "respuestas", "TEXT")
+        DatabaseConnection._add_column(
+            connection, "PASSWORD_RESET", "intentos", "INTEGER NOT NULL DEFAULT 0"
+        )
 
         units = [
             (1, "Fundamentos de Python", "Aprende variables, tipos de datos, operadores y entrada y salida de datos.", 1),

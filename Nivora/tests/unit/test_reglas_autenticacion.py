@@ -1,7 +1,8 @@
-from database.database import DatabaseConnection
-from repositories.user_repository import UserRepository
+"""Unit tests of AuthService rules (registration, login, level, reset codes) with a fake repository."""
+
+import pytest
+
 from services.auth_service import AuthService
-from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class FakeUsers:
@@ -83,44 +84,6 @@ def test_recommendation_uses_quiz_score():
     assert advanced["leccion"] == "variables"
 
 
-def test_reset_code_is_single_use_and_persists_in_fresh_sqlite(tmp_path):
-    database = DatabaseConnection(config={"database_path": str(tmp_path / "nivora.db")})
-    users = UserRepository(database)
-    users.create("Ana", "ana@example.com", generate_password_hash("old-password"))
-    service = AuthService(users)
-
-    code, user = service.create_reset_code("ANA@example.com", ttl=60)
-
-    assert len(code) == 6 and code.isdigit()
-    assert user["correo"] == "ana@example.com"
-    assert service.reset_password_with_code("ana@example.com", code, "new-password-123") == "ok"
-    assert check_password_hash(
-        users.find_by_email("ana@example.com")["contrasena"],
-        "new-password-123",
-    )
-    assert service.reset_password_with_code("ana@example.com", code, "another-password-1") == "expired"
-
-
-def test_reset_code_expires_and_locks_after_too_many_attempts(tmp_path):
-    database = DatabaseConnection(config={"database_path": str(tmp_path / "nivora.db")})
-    users = UserRepository(database)
-    users.create("Ana", "ana@example.com", generate_password_hash("old-password"))
-    service = AuthService(users)
-
-    expired_code, _ = service.create_reset_code("ana@example.com", ttl=-1)
-    assert service.reset_password_with_code("ana@example.com", expired_code, "new-password-1") == "expired"
-
-    code, _ = service.create_reset_code("ana@example.com", ttl=60)
-    wrong = "000000" if code != "000000" else "111111"
-    results = [
-        service.reset_password_with_code("ana@example.com", wrong, "new-password-1")
-        for _ in range(AuthService.RESET_CODE_MAX_ATTEMPTS)
-    ]
-    assert results[:-1] == ["invalid"] * (AuthService.RESET_CODE_MAX_ATTEMPTS - 1)
-    assert results[-1] == "expired"
-    assert service.reset_password_with_code("ana@example.com", code, "new-password-1") == "expired"
-
-
 def test_reset_code_rejects_unknown_users_and_weak_passwords():
     service = AuthService(FakeUsers())
 
@@ -130,11 +93,69 @@ def test_reset_code_rejects_unknown_users_and_weak_passwords():
     assert service.reset_password_with_code("missing@example.com", "123456", "new-password-1") == "expired"
 
 
-def test_database_creates_a_custom_parent_directory(tmp_path):
-    database_path = tmp_path / "azure-data" / "nivora.db"
-    database = DatabaseConnection(config={"database_path": str(database_path)})
+# Boundary values of the name length (2 to 30 characters after trimming).
+@pytest.mark.parametrize(
+    "name, accepted",
+    [("A", False), ("An", True), ("A" * 30, True), ("A" * 31, False), ("   ", False), ("  Ana  ", True)],
+)
+def test_name_length_boundaries(name, accepted):
+    created, _message = AuthService(FakeUsers()).register(name, "ana@example.com", "password-123")
+    assert created is accepted
 
-    connection = database.connect()
-    connection.close()
 
-    assert database_path.exists()
+# Equivalence classes of the e-mail address.
+@pytest.mark.parametrize(
+    "email, accepted",
+    [
+        ("ana@example.com", True),
+        ("ANA@Example.COM", True),     # normalized to lower case
+        ("sin-arroba.com", False),
+        ("ana@dominio", False),        # no top-level domain
+        ("ana perez@example.com", False),
+        ("", False),
+    ],
+)
+def test_email_equivalence_classes(email, accepted):
+    created, _message = AuthService(FakeUsers()).register("Ana", email, "password-123")
+    assert created is accepted
+
+
+# Equivalence classes and boundaries of the password rule.
+@pytest.mark.parametrize(
+    "password, strong",
+    [
+        ("abc1234", False),      # 7 characters
+        ("abcd1234", True),      # 8 characters
+        ("abcdefgh", False),     # letters only
+        ("12345678", False),     # digits only
+        ("ñandú2024", True),     # non-ASCII letters
+        ("", False),
+        (None, False),
+    ],
+)
+def test_password_rule(password, strong):
+    assert AuthService.password_is_strong(password) is strong
+
+
+def test_duplicate_email_is_rejected_ignoring_case():
+    service = AuthService(FakeUsers())
+    service.register("Ana", "ana@example.com", "password-123")
+
+    created, message = service.register("Otra", "ANA@example.com", "password-123")
+
+    assert created is False
+    assert "ya está registrado" in message
+
+
+# Decision table of the initial level recommendation (correct answers 0..3).
+@pytest.mark.parametrize(
+    "answers, level",
+    [
+        (["", "", ""], "inicial"),
+        (["variables", "", ""], "inicial"),
+        (["variables", "int", ""], "basico"),
+        (["variables", "int", "if"], "intermedio"),
+    ],
+)
+def test_level_recommendation_decision_table(answers, level):
+    assert AuthService.recommend_level(answers)["codigo"] == level

@@ -36,9 +36,20 @@ prefiere reducir el movimiento.
 
 ## Pruebas
 
-```powershell
-pytest -q
+El plan de pruebas completo está en [`docs/plan_de_pruebas.md`](docs/plan_de_pruebas.md).
+Las pruebas automáticas están organizadas por nivel:
+
+```bash
+python -m pytest -q              # suite completa (regresión)
+python -m pytest -m smoke -q     # comprobación rápida
+python -m pytest -m unit -q      # también: integration, system, security
 ```
+
+- `tests/unit/`: funciones aisladas (reglas de autenticación, evaluación de retos, correo).
+- `tests/integration/`: servicios y repositorios con SQLite real (migraciones, códigos, progreso).
+- `tests/system/`: flujos completos por HTTP (registro, lecciones, contraseñas, certificado, API, seguridad).
+- `tests/smoke/`: verificación rápida de que lo principal responde.
+- `qa/postman/`: colección de Postman para la API; `qa/k6/`: prueba de carga con k6.
 
 ## Estructura del proyecto
 
@@ -51,8 +62,9 @@ pytest -q
   `contenido_lecciones` con la teoría y `ejercicios_practica` con los retos).
 - `repositories/`: acceso a SQLite (usuarios, tokens y progreso).
 - `templates/` y `static/`: interfaz HTML, estilos, imágenes y JavaScript.
-- `tests/`: pruebas automatizadas (`conftest.py` aísla la base de datos en
-  cada prueba).
+- `tests/`: pruebas automatizadas por nivel (`conftest.py` aísla la base de
+  datos en cada prueba); `qa/` contiene la colección de Postman y el script de k6.
+- `docs/plan_de_pruebas.md`: plan maestro de pruebas.
 
 ## Producción
 

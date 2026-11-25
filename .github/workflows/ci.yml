@@ -2,7 +2,7 @@ name: Integracion Continua - NIVORA
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "Nivorafinal2" ]
   pull_request:
     branches: [ "main" ]
 
@@ -28,6 +28,10 @@ jobs:
       run: |
         python -m compileall Nivora/
 
-    - name: Ejecutar pruebas de NIVORA
+    - name: Smoke test de NIVORA (comprobación rápida)
+      working-directory: Nivora
+      run: python -m pytest -m smoke -q
+
+    - name: Pruebas de regresión de NIVORA (suite completa)
       working-directory: Nivora
       run: python -m pytest -q

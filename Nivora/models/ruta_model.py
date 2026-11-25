@@ -1,3 +1,4 @@
+import copy
 import json
 
 from database.database import DatabaseConnection
@@ -7,6 +8,37 @@ from models.contenido_lecciones import LESSON_MATERIAL
 class RutaModel:
     database = DatabaseConnection()
     LESSON_MATERIAL = LESSON_MATERIAL
+    # Course content (units, lessons and quizzes) only changes when the app is
+    # deployed again, so it is read once per database file and process. Every
+    # caller gets its own copy (the lesson page shuffles the options).
+    _content_cache = {}
+
+    @classmethod
+    def _content(cls):
+        key = cls.database.path()
+        if key not in cls._content_cache:
+            cls._content_cache[key] = {
+                "lessons": cls._read_lessons(),
+                "units": cls._read_units(),
+            }
+        return cls._content_cache[key]
+
+    @classmethod
+    def clear_cache(cls):
+        cls._content_cache.clear()
+
+    @classmethod
+    def _read_units(cls):
+        connection = cls.database.connect()
+        try:
+            return [
+                dict(row)
+                for row in connection.execute(
+                    "SELECT id_unidad, numero, nombre, descripcion FROM UNIDAD ORDER BY numero"
+                ).fetchall()
+            ]
+        finally:
+            connection.close()
 
     @classmethod
     def obtener_material_leccion(cls, lesson_id):
@@ -14,6 +46,10 @@ class RutaModel:
 
     @classmethod
     def obtener_lecciones(cls):
+        return copy.deepcopy(cls._content()["lessons"])
+
+    @classmethod
+    def _read_lessons(cls):
         connection = cls.database.connect()
         try:
             rows = connection.execute(
@@ -54,15 +90,8 @@ class RutaModel:
         """Units in order. A unit unlocks when every lesson of the previous one
         is completed; the first unit is always open."""
         actividades = actividades or {}
-        connection = cls.database.connect()
-        try:
-            units = connection.execute(
-                "SELECT id_unidad, numero, nombre, descripcion FROM UNIDAD ORDER BY numero"
-            ).fetchall()
-        finally:
-            connection.close()
-
-        lessons = cls.obtener_lecciones()
+        units = cls._content()["units"]
+        lessons = cls._content()["lessons"]
         routes = []
         previous_completed = True
         for unit in units:
@@ -84,7 +113,9 @@ class RutaModel:
                 "estado": "Continuar" if unlocked else "Bloqueada",
                 "desbloqueada": unlocked,
             })
-            previous_completed = bool(unit_lessons) and completed == len(unit_lessons)
+            # The chain matters: a unit only opens the next one if it is itself
+            # unlocked and fully completed.
+            previous_completed = unlocked and bool(unit_lessons) and completed == len(unit_lessons)
         return routes
 
     @classmethod

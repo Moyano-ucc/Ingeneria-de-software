@@ -3,14 +3,11 @@
 Behind the GitHub Codespaces proxy Uvicorn receives ``Host: localhost:8000``.
 An absolute ``Location`` built from that header sends the browser to
 ``localhost`` and fails with ERR_CONNECTION_REFUSED, so every redirect must be
-relative.
-"""
+relative."""
 
 import re
 
-
-from tests.conftest import csrf_from_page
-from tests.test_app import test_client
+from tests.helpers import csrf_from_page, test_client
 
 
 PROXY_HEADERS = {

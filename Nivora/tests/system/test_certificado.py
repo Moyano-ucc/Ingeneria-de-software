@@ -1,4 +1,4 @@
-"""Course completion certificate (point 5)."""
+"""System tests of the course completion certificate."""
 
 import re
 
@@ -7,35 +7,16 @@ import pytest
 from models.ruta_model import RutaModel
 from repositories.certificate_repository import CertificateRepository
 from repositories.progress_repository import ProgressRepository
-from tests.conftest import csrf_from_page
-from tests.test_app import test_client
+from tests.helpers import complete_lessons, csrf_from_page, register_user, test_client
 
 
 def _register(client, email="ana@example.com"):
-    client.get("/registro")
-    client.post(
-        "/registro",
-        data={
-            "csrf_token": csrf_from_page(client),
-            "nombre": "Ana Pérez",
-            "email": email,
-            "password": "clave-segura-1",
-            "confirmacion": "clave-segura-1",
-        },
-    )
-    with client.session_transaction() as session:
-        return session["usuario"]["id_persona"]
+    return register_user(client, email=email, nombre="Ana Pérez")
 
 
-def _complete(user_id, how_many):
-    lessons = RutaModel.obtener_lecciones()[:how_many]
-    for lesson in lessons:
-        ProgressRepository().save_activity(
-            user_id, lesson["id"], {"completada": True, "intentada": True, "puntuacion": 3, "total": 3}
-        )
+_complete = complete_lessons
 
 
-# Boundary values on the number of completed lessons (16 in total).
 @pytest.mark.parametrize("completed, available", [(0, False), (15, False), (16, True)])
 def test_certificate_requires_every_lesson(completed, available):
     client = test_client()

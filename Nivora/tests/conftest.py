@@ -1,6 +1,9 @@
-import re
+import pathlib
 
 import pytest
+
+
+LEVELS = {"unit", "integration", "system", "smoke"}
 
 
 @pytest.fixture(autouse=True)
@@ -9,7 +12,9 @@ def isolate_database(tmp_path, monkeypatch):
     monkeypatch.setenv("NIVORA_DATABASE_PATH", str(tmp_path / "nivora.db"))
 
 
-def csrf_from_page(client):
-    """Read the CSRF token from a rendered form (works with any Host header)."""
-    html = client.get("/recuperar-contrasena").text
-    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+def pytest_collection_modifyitems(items):
+    """The folder of a test defines its level (unit, integration, system, smoke)."""
+    for item in items:
+        for part in pathlib.Path(str(item.fspath)).parts:
+            if part in LEVELS:
+                item.add_marker(getattr(pytest.mark, part))

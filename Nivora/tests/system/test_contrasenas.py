@@ -1,4 +1,4 @@
-"""Password recovery and password change with an e-mailed 6-digit code (E03, E04)."""
+"""System tests of password recovery and change with an e-mailed 6-digit code."""
 
 import re
 import smtplib
@@ -8,9 +8,7 @@ import pytest
 from app import create_app
 from config import TestingConfig
 from services import email_service
-from services.email_service import EmailService
-from tests.conftest import csrf_from_page
-from tests.test_app import test_client
+from tests.helpers import csrf_from_page, register_user, test_client
 
 
 class SmtpConfig(TestingConfig):
@@ -66,17 +64,7 @@ def fake_smtp(monkeypatch):
 
 
 def _register(client, email="ana@example.com", password="clave-segura-1"):
-    client.get("/registro")
-    client.post(
-        "/registro",
-        data={
-            "csrf_token": csrf_from_page(client),
-            "nombre": "Ana",
-            "email": email,
-            "password": password,
-            "confirmacion": password,
-        },
-    )
+    register_user(client, email=email, password=password, return_id=False)
 
 
 def _code_from_last_email():
@@ -107,6 +95,31 @@ def _request_code(client, email="ana@example.com"):
     return client.post(
         "/recuperar-contrasena", data={"csrf_token": csrf_from_page(client), "email": email}
     )
+
+
+def test_password_recovery_page_offers_a_code_and_requires_a_pending_request():
+    client = test_client()
+
+    recovery = client.get("/recuperar-contrasena")
+    without_request = client.get("/verificar-codigo")
+
+    assert "código de 6 dígitos" in recovery.text
+    assert without_request.status_code == 302
+    assert without_request.headers["Location"] == "/recuperar-contrasena"
+
+
+def test_profile_change_password_opens_recovery_with_account_email():
+    client = test_client()
+    with client.session_transaction() as session:
+        session["usuario"] = {"nombre": "Ana", "email": "ana@example.com"}
+
+    profile = client.get("/ajustes")
+    recovery = client.get("/recuperar-contrasena")
+
+    assert profile.status_code == 200
+    assert b'action="/ajustes/cambiar-contrasena"' in profile.content
+    assert recovery.status_code == 200
+    assert b'value="ana@example.com"' in recovery.content
 
 
 def test_recovery_sends_a_code_that_resets_the_password():
@@ -287,25 +300,6 @@ def test_change_password_requires_login():
     assert response.headers["Location"] == "/login"
 
 
-def test_email_service_reports_missing_settings_and_uses_ssl_on_port_465():
-    class Empty:
-        SMTP_HOST = None
-
-    assert EmailService(Empty).missing_settings() == [
-        "NIVORA_SMTP_HOST",
-        "NIVORA_SMTP_USERNAME",
-        "NIVORA_SMTP_PASSWORD",
-        "NIVORA_SMTP_FROM",
-    ]
-    assert EmailService(Empty).send("a@b.com", "s", "t").error == "not_configured"
-
-    class Ssl(SmtpConfig):
-        SMTP_PORT = 465
-
-    assert EmailService(Ssl).use_ssl is True
-    assert EmailService(SmtpConfig).use_ssl is False
-
-
 def test_registration_and_reset_share_the_same_live_password_rules():
     client = test_client(create_app(SmtpConfig))
     signup = client.get("/registro").text
@@ -320,8 +314,6 @@ def test_registration_and_reset_share_the_same_live_password_rules():
             assert rule in page
 
 
-# Equivalence classes and boundary values of the password rule (shared by
-# registration and reset): exactly 7 vs 8 characters, missing letters or digits.
 @pytest.mark.parametrize(
     "password, accepted",
     [
