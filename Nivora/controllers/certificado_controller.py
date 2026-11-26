@@ -9,7 +9,7 @@ from security import csrf_protected
 from views.responses import redirect, render_template
 
 
-certificado_router = APIRouter(dependencies=csrf_protected)
+certificado_router = APIRouter(dependencies=csrf_protected, tags=["Páginas: certificado"])
 certificate_repository = CertificateRepository()
 progress_repository = ProgressRepository()
 MONTHS = (

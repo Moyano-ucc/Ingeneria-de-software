@@ -5,7 +5,7 @@ from security import csrf_protected
 from views.responses import redirect, render_template
 
 
-progreso_router = APIRouter(dependencies=csrf_protected)
+progreso_router = APIRouter(dependencies=csrf_protected, tags=["Páginas: progreso"])
 
 
 @progreso_router.get("/progreso", name="progreso.mostrar_progreso")

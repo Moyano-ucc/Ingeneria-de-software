@@ -12,6 +12,7 @@ from config import Config
 from controllers.aprender_controller import aprender_router
 from controllers.auth_controller import auth_router
 from controllers.certificado_controller import certificado_router
+from controllers.password_controller import password_router
 from controllers.practica_controller import practica_router
 from controllers.progreso_controller import progreso_router
 from errors.handlers import register_error_handlers
@@ -57,17 +58,18 @@ def create_app(config_object=Config) -> FastAPI:
             response.headers["Pragma"] = "no-cache"
         return response
 
-    @app.get("/", name="home")
+    @app.get("/", name="home", tags=["Páginas: inicio"])
     async def home(request: Request):
         from views.responses import render_template
 
         return render_template(request, "index.html")
 
-    @app.get("/health", name="health")
+    @app.get("/health", name="health", tags=["Sistema"])
     async def health():
         return {"status": "ok"}
 
     app.include_router(auth_router)
+    app.include_router(password_router)
     app.include_router(aprender_router)
     app.include_router(practica_router)
     app.include_router(progreso_router)

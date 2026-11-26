@@ -83,3 +83,28 @@ def test_puzzle_feedback_explains_the_mistake_without_solving_it():
     )
     assert puzzle_feedback(emparejar, answer)[0] == "Tienes 1 de 3 parejas correctas."
     assert puzzle_feedback(emparejar, {})[0] == "Te faltan 3 parejas por conectar."
+
+
+def test_every_puzzle_exercise_has_an_evaluation_strategy():
+    from services.practica_service import PUZZLE_STRATEGIES
+
+    kinds = {exercise["tipo"] for exercise in EJERCICIOS if "tipo" in exercise}
+    assert kinds <= set(PUZZLE_STRATEGIES)
+
+
+def test_a_new_puzzle_kind_is_added_without_modifying_existing_code(monkeypatch):
+    """Open/closed principle: register a new strategy instead of editing an if/elif."""
+    from services import practica_service
+
+    class TrueFalseStrategy(practica_service.PuzzleStrategy):
+        def validate(self, puzzle, answer):
+            return answer, answer == puzzle["solucion"]
+
+        def feedback(self, puzzle, answer):
+            return ["Revisa la afirmación."]
+
+    monkeypatch.setitem(practica_service.PUZZLE_STRATEGIES, "verdadero_falso", TrueFalseStrategy())
+    exercise = {"tipo": "verdadero_falso", "rompecabezas": {"solucion": True}}
+
+    assert validate_puzzle_answer(exercise, "true") == (True, True)
+    assert puzzle_feedback(exercise, False) == ["Revisa la afirmación."]
