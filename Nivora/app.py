@@ -10,6 +10,7 @@ from starlette.staticfiles import StaticFiles
 from api_routes import api_router
 from config import Config
 from controllers.aprender_controller import aprender_router
+from controllers.apuntes_api_controller import router as apuntes_api_router
 from controllers.auth_controller import auth_router
 from controllers.certificado_controller import certificado_router
 from controllers.password_controller import password_router
@@ -75,6 +76,7 @@ def create_app(config_object=Config) -> FastAPI:
     app.include_router(progreso_router)
     app.include_router(certificado_router)
     app.include_router(api_router)
+    app.include_router(apuntes_api_router)
     app.mount(
         "/static",
         StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),

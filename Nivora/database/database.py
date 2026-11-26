@@ -93,6 +93,18 @@ class DatabaseConnection:
                 total INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (id_persona, leccion_id)
             );
+            CREATE TABLE IF NOT EXISTS APUNTE (
+                id_apunte INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_persona INTEGER NOT NULL,
+                leccion_id TEXT NOT NULL,
+                contenido TEXT NOT NULL,
+                destacado INTEGER NOT NULL DEFAULT 0,
+                creado REAL NOT NULL,
+                actualizado REAL NOT NULL,
+                FOREIGN KEY (id_persona) REFERENCES PERSONA(id_persona) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_apunte_persona_leccion
+                ON APUNTE (id_persona, leccion_id);
             CREATE TABLE IF NOT EXISTS CERTIFICADO (
                 id_persona INTEGER PRIMARY KEY,
                 codigo TEXT NOT NULL UNIQUE,

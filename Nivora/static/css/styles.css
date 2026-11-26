@@ -1461,3 +1461,60 @@ nav a:hover,
 input.is-match {
     border-color: #48bb78;
 }
+
+/* Mis apuntes (API REST desde la lección) */
+.lesson-notes {
+    background: var(--card-dark);
+    border: 1px solid #2b3e5d;
+    border-radius: 12px;
+    margin-top: 2rem;
+    padding: 1.2rem 1.5rem;
+}
+
+.lesson-notes h2 { color: var(--yellow-primary); margin-top: 0; }
+.notes-help { color: var(--text-sub); margin-top: 0; }
+.notes-form { display: flex; flex-direction: column; gap: 0.6rem; }
+.notes-form textarea {
+    background: #0b1424;
+    border: 1px solid #405979;
+    border-radius: 8px;
+    color: var(--text-light);
+    font: inherit;
+    padding: 0.7rem;
+    resize: vertical;
+}
+.notes-form .btn-secondary { align-self: flex-start; cursor: pointer; font: inherit; }
+.notes-status { color: var(--text-sub); font-size: 0.9rem; min-height: 1.2rem; }
+.notes-list { display: grid; gap: 0.6rem; list-style: none; margin: 0; padding: 0; }
+.notes-empty { color: var(--text-sub); font-style: italic; }
+.note {
+    background: #101827;
+    border: 1px solid #2b3e5d;
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+}
+.note.is-starred { border-color: var(--yellow-primary); }
+.note p { margin: 0 0 0.4rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-actions { display: flex; gap: 0.5rem; }
+.note-action {
+    background: transparent;
+    border: 1px solid #405979;
+    border-radius: 6px;
+    color: var(--text-light);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.2rem 0.6rem;
+}
+.note-action:hover { border-color: var(--yellow-primary); }
+.sr-only {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
