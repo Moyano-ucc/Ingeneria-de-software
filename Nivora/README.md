@@ -119,12 +119,24 @@ dependencias sustituibles, interfaces pequeñas y acceso a datos aislado.
 ## API REST
 
 La interfaz web y la API se sirven desde la misma aplicación FastAPI (`app:app`).
+Swagger está en `/docs` (en Azure: https://nivora.azurewebsites.net/docs).
 
-- Swagger: `http://127.0.0.1:8000/docs`
-- Salud: `GET /api/health`
-- Lecciones: `GET /api/lecciones`
-- Lección por identificador: `GET /api/lecciones/{lesson_id}`
-- Evaluación: `POST /api/lecciones/{lesson_id}/evaluar`
+| Método | Ruta | Uso | Respuestas |
+| --- | --- | --- | --- |
+| GET | `/api/health` | Estado del servicio | 200 |
+| GET | `/api/lecciones` | Lista de lecciones | 200 |
+| GET | `/api/lecciones/{lesson_id}` | Una lección (path param) | 200, 404 |
+| POST | `/api/lecciones/{lesson_id}/evaluar` | Evalúa respuestas (cuerpo JSON) | 200, 400, 404, 422 |
+| GET | `/api/apuntes?leccion=...` | Mis apuntes (query param opcional) | 200, 401 |
+| POST | `/api/apuntes` | Crea un apunte | 201 + `Location`, 401, 422 |
+| GET | `/api/apuntes/{apunte_id}` | Un apunte | 200, 401, 404, 422 |
+| PUT | `/api/apuntes/{apunte_id}` | Reemplaza el apunte completo | 200, 401, 404, 422 |
+| PATCH | `/api/apuntes/{apunte_id}` | Cambia algunos campos | 200, 401, 404, 422 |
+| DELETE | `/api/apuntes/{apunte_id}` | Elimina el apunte | 204, 401, 404 |
+
+Los apuntes usan la misma sesión que las páginas: para probarlos en Swagger,
+inicia sesión en Nivora en el mismo navegador y luego abre `/docs`. La lección
+también los usa desde el navegador («Mis apuntes», con `fetch`).
 
 ## Recuperación y cambio de contraseña
 

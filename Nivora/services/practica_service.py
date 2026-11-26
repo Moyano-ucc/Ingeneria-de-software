@@ -228,15 +228,33 @@ def evaluate_code(exercise, code):
 # Puzzle exercises (ordenar, completar, emparejar)
 # --------------------------------------------------------------------------
 
-def validate_puzzle_answer(exercise, raw_answer):
-    """Return ``(normalized_answer, correct)``; unknown pieces are discarded."""
-    puzzle = exercise["rompecabezas"]
-    try:
-        answer = json.loads(raw_answer)
-    except (TypeError, json.JSONDecodeError):
-        answer = None
+INVALID_PIECES_MESSAGE = (
+    "Tu respuesta incluye piezas que no pertenecen a este reto. Pulsa «Limpiar» "
+    "y vuelve a armarla."
+)
 
-    if exercise["tipo"] == "ordenar":
+
+class PuzzleStrategy:
+    """Evaluation strategy for one kind of puzzle (Strategy pattern).
+
+    Each kind knows how to validate an answer and how to explain mistakes.
+    A new kind of puzzle is added by writing a new subclass and registering
+    it in ``PUZZLE_STRATEGIES``: the existing code does not change (OCP).
+    """
+
+    def validate(self, puzzle, answer):
+        """Return ``(normalized_answer, correct)``; unknown pieces are discarded."""
+        raise NotImplementedError
+
+    def feedback(self, puzzle, answer):
+        """Explain what is wrong without giving away the solution."""
+        raise NotImplementedError
+
+
+class OrderStrategy(PuzzleStrategy):
+    """«ordenar»: put the code blocks in the right order."""
+
+    def validate(self, puzzle, answer):
         valid_ids = {block["id"] for block in puzzle["bloques"]}
         valid_structure = (
             isinstance(answer, list)
@@ -244,9 +262,7 @@ def validate_puzzle_answer(exercise, raw_answer):
             and all(isinstance(item, str) and item in valid_ids for item in answer)
         )
         normalized = (
-            [item for item in answer if isinstance(item, str) and item in valid_ids][
-                : len(valid_ids)
-            ]
+            [item for item in answer if isinstance(item, str) and item in valid_ids][: len(valid_ids)]
             if isinstance(answer, list)
             else []
         )
@@ -257,47 +273,7 @@ def validate_puzzle_answer(exercise, raw_answer):
         )
         return normalized, correct
 
-    if exercise["tipo"] == "completar":
-        options = {
-            gap["id"]: {option["id"] for option in gap["opciones"]}
-            for gap in puzzle["huecos"]
-        }
-    else:
-        valid_right = {item["id"] for item in puzzle["derecha"]}
-        options = {item["id"]: valid_right for item in puzzle["izquierda"]}
-
-    normalized = (
-        {
-            key: value
-            for key, value in answer.items()
-            if key in options and isinstance(value, str) and value in options[key]
-        }
-        if isinstance(answer, dict)
-        else {}
-    )
-    correct = (
-        isinstance(answer, dict)
-        and len(answer) == len(normalized)
-        and normalized == puzzle["solucion"]
-        and len(set(normalized.values())) == len(normalized)
-    )
-    return normalized, correct
-
-
-INVALID_PIECES_MESSAGE = (
-    "Tu respuesta incluye piezas que no pertenecen a este reto. Pulsa «Limpiar» "
-    "y vuelve a armarla."
-)
-
-
-def puzzle_feedback(exercise, answer):
-    """Explain what is wrong in a puzzle answer without solving it."""
-    puzzle = exercise["rompecabezas"]
-    kind = exercise["tipo"]
-    if answer == puzzle["solucion"]:
-        return [INVALID_PIECES_MESSAGE]
-
-    if kind == "ordenar":
+    def feedback(self, puzzle, answer):
         solution = puzzle["solucion"]
         texts = {block["id"]: block["texto"] for block in puzzle["bloques"]}
         if len(answer) < len(solution):
@@ -313,32 +289,94 @@ def puzzle_feedback(exercise, answer):
             )
         return messages
 
-    if kind == "completar":
+
+class MappingStrategy(PuzzleStrategy):
+    """Common validation for puzzles whose answer is a {key: option} mapping."""
+
+    def options(self, puzzle):
+        raise NotImplementedError
+
+    def validate(self, puzzle, answer):
+        options = self.options(puzzle)
+        normalized = (
+            {
+                key: value
+                for key, value in answer.items()
+                if key in options and isinstance(value, str) and value in options[key]
+            }
+            if isinstance(answer, dict)
+            else {}
+        )
+        correct = (
+            isinstance(answer, dict)
+            and len(answer) == len(normalized)
+            and normalized == puzzle["solucion"]
+            and len(set(normalized.values())) == len(normalized)
+        )
+        return normalized, correct
+
+
+class FillGapsStrategy(MappingStrategy):
+    """«completar»: choose the right token for each gap."""
+
+    def options(self, puzzle):
+        return {gap["id"]: {option["id"] for option in gap["opciones"]} for gap in puzzle["huecos"]}
+
+    def feedback(self, puzzle, answer):
         explanations = puzzle.get("explicaciones", {})
         labels = {
             gap["id"]: {option["id"]: option["texto"] for option in gap["opciones"]}
             for gap in puzzle["huecos"]
         }
-        missing = [gap for gap in puzzle["solucion"] if gap not in answer]
-        if missing:
+        if any(gap not in answer for gap in puzzle["solucion"]):
             return ["Elige una ficha para cada hueco antes de comprobar."]
-        messages = []
-        for gap, expected in puzzle["solucion"].items():
-            chosen = answer.get(gap)
-            if chosen != expected:
-                messages.append(
-                    explanations.get(gap, {}).get(chosen)
-                    or f"La ficha «{labels[gap][chosen]}» no produce el resultado esperado."
-                )
-        return messages
+        return [
+            explanations.get(gap, {}).get(answer[gap])
+            or f"La ficha «{labels[gap][answer[gap]]}» no produce el resultado esperado."
+            for gap, expected in puzzle["solucion"].items()
+            if answer[gap] != expected
+        ]
 
-    left = {item["id"]: item["texto"] for item in puzzle["izquierda"]}
-    solution = puzzle["solucion"]
-    if len(answer) < len(solution):
-        return [f"Te faltan {len(solution) - len(answer)} parejas por conectar."]
-    correct_pairs = sum(answer.get(key) == value for key, value in solution.items())
-    first_wrong = next(key for key, value in solution.items() if answer.get(key) != value)
-    return [
-        f"Tienes {correct_pairs} de {len(solution)} parejas correctas.",
-        f"Revisa con qué conectaste «{left[first_wrong]}».",
-    ]
+
+class MatchStrategy(MappingStrategy):
+    """«emparejar»: connect each concept with its description."""
+
+    def options(self, puzzle):
+        valid_right = {item["id"] for item in puzzle["derecha"]}
+        return {item["id"]: valid_right for item in puzzle["izquierda"]}
+
+    def feedback(self, puzzle, answer):
+        left = {item["id"]: item["texto"] for item in puzzle["izquierda"]}
+        solution = puzzle["solucion"]
+        if len(answer) < len(solution):
+            return [f"Te faltan {len(solution) - len(answer)} parejas por conectar."]
+        correct_pairs = sum(answer.get(key) == value for key, value in solution.items())
+        first_wrong = next(key for key, value in solution.items() if answer.get(key) != value)
+        return [
+            f"Tienes {correct_pairs} de {len(solution)} parejas correctas.",
+            f"Revisa con qué conectaste «{left[first_wrong]}».",
+        ]
+
+
+PUZZLE_STRATEGIES = {
+    "ordenar": OrderStrategy(),
+    "completar": FillGapsStrategy(),
+    "emparejar": MatchStrategy(),
+}
+
+
+def validate_puzzle_answer(exercise, raw_answer):
+    """Return ``(normalized_answer, correct)`` using the strategy of the puzzle kind."""
+    try:
+        answer = json.loads(raw_answer)
+    except (TypeError, json.JSONDecodeError):
+        answer = None
+    return PUZZLE_STRATEGIES[exercise["tipo"]].validate(exercise["rompecabezas"], answer)
+
+
+def puzzle_feedback(exercise, answer):
+    """Explain what is wrong in a puzzle answer without solving it."""
+    puzzle = exercise["rompecabezas"]
+    if answer == puzzle["solucion"]:
+        return [INVALID_PIECES_MESSAGE]
+    return PUZZLE_STRATEGIES[exercise["tipo"]].feedback(puzzle, answer)

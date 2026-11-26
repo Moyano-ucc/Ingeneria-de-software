@@ -8,7 +8,7 @@ from security import csrf_protected
 from views.responses import redirect, render_template
 
 
-aprender_router = APIRouter(dependencies=csrf_protected)
+aprender_router = APIRouter(dependencies=csrf_protected, tags=["Páginas: aprendizaje"])
 progress_repository = ProgressRepository()
 
 

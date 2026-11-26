@@ -129,5 +129,18 @@
             {% endif %}
         </div>
     {% endif %}
+    <section class="lesson-notes" data-notes data-lesson="{{ lesson.id }}" aria-labelledby="notes-title">
+        <h2 id="notes-title">Mis apuntes</h2>
+        <p class="notes-help">Escribe lo que quieras recordar de esta lección. Solo tú puedes verlos.</p>
+        <form class="notes-form" data-notes-form>
+            <label for="nota-nueva" class="sr-only">Nuevo apunte</label>
+            <textarea id="nota-nueva" name="contenido" rows="3" maxlength="2000" placeholder="Ej.: input() siempre devuelve texto; uso int() para convertirlo." required></textarea>
+            <button type="submit" class="btn-secondary">Guardar apunte</button>
+        </form>
+        <p class="notes-status" data-notes-status role="status" aria-live="polite"></p>
+        <ul class="notes-list" data-notes-list></ul>
+        <noscript><p class="notes-help">Activa JavaScript para usar tus apuntes.</p></noscript>
+    </section>
 </article>
+<script src="{{ url_for('static', filename='js/apuntes.js') }}" defer></script>
 {% endblock %}
